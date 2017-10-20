@@ -8,6 +8,7 @@ using System.Net.NetworkInformation;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Propability = Doctrina.Tests.PositiveProperFraction;
 
 namespace Doctrina.Tests
 {
@@ -31,11 +32,11 @@ namespace Doctrina.Tests
     /// <returns></returns>
     public delegate Distribution<Action<TState>> Policy<TState>(TState state, Action<TState>[] actionSpace);
 
-    public class Distribution<T> : ReadOnlyDictionary<T, double>
+    public class Distribution<T> : ReadOnlyDictionary<T, Propability>
     {
-        public Distribution(IDictionary<T, double> dictionary) : base(dictionary)
+        public Distribution(IDictionary<T, Propability> dictionary) : base(dictionary)
         {
-            if(Math.Abs(dictionary.Values.Sum()) > 0f) throw new ArgumentException("The sum of all probabilities does not add up to 1");
+            if(System.Math.Abs(dictionary.Values.Select(propability => propability.Value).Sum()) > 1f) throw new ArgumentException("The sum of all probabilities does not add up to 1");
         }
     }
 
@@ -110,30 +111,64 @@ namespace Doctrina.Tests
             .Equals(other.Value);
     }
 
+    /// <summary>
+    /// A rational number between 0 and 1
+    /// </summary>
+    public struct PositiveProperFraction
+    {
+        public bool Equals(double other) => Value.Equals(other);
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is Return && Equals((Return)obj);
+        }
+
+        public override int GetHashCode() => Value.GetHashCode();
+
+        public double Value { get; }
+
+        public PositiveProperFraction(double value)
+        {
+            if(value < 0 || value > 1) throw new ArgumentOutOfRangeException(nameof(value), value, "The propability should be a value between 0 and 1");
+            Value = value;
+        }
+
+        public static implicit operator PositiveProperFraction(double value) => new PositiveProperFraction(value);
+
+        public static implicit operator double(PositiveProperFraction @return) => @return.Value;
+
+        public static bool operator ==(PositiveProperFraction @return, PositiveProperFraction other) =>
+            @return.Equals(other.Value);
+
+        public static bool operator !=(PositiveProperFraction @return, PositiveProperFraction other) => !@return
+            .Equals(other.Value);
+    }
+
     public static class Policies
     {
         /// <summary>
         /// The epsilon-greedy policy either takes a random action with
-        //  probability epsilon, or it takes the action for the highest
-        //  Q-value (Q-value, or action value, is the expected return (total commulative reward) taking a action A in state S).
-        //
-        //    If epsilon is 1.0 then the actions are always random.
-        //    If epsilon is 0.0 then the actions are always argmax for the Q-values.
+        /// probability epsilon, or it takes the action for the highest
+        /// Q-value.
+        ///    If epsilon is 1.0 then the actions are always random.
+        ///    If epsilon is 0.0 then the actions are always argmax for the Q-values.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
-        /// <param name="epsilon"></param>
+        /// <param name="properFraction"></param>
         /// <param name="actionValue"></param>
+        /// <param name="nextRandomDouble">A function that should provide a random integer</param>
+        /// <param name="nextRandomIntegerInRange">A function that should provide a unsigned random integer given a specific range</param>
         /// <returns></returns>
-        public static Policy<TState> EpsilonGreedy<TState>(float epsilon, ActionValue<TState> actionValue) =>
+        public static Policy<TState> EpsilonGreedy<TState>(PositiveProperFraction epsilon, ActionValue<TState> actionValue, Func<PositiveProperFraction> nextRandomDouble, Func<(int minimumValue, int maximumValue), int> nextRandomIntegerInRange) =>
             (state, actionSpace) =>
             {
                 var actionValues = actionSpace.ToDictionary(action => action, action => actionValue(action, state));
-                var actionDistribution = new Dictionary<Action<TState>, double>();
+                var actionDistribution = new Dictionary<Action<TState>, Propability>();
 
-                var cryptoRandom = new CryptoRandom();
-                if (cryptoRandom.NextDouble() < epsilon)
+                if (nextRandomDouble() < epsilon)
                 {
-                    var randomIndex = cryptoRandom.Next(0, actionSpace.Length - 1);
+                    var randomIndex = nextRandomIntegerInRange((0, actionSpace.Length - 1));
                     actionDistribution.Add(actionValues.ElementAt(randomIndex).Key, 1.0d);
                 }
                 else
@@ -147,6 +182,8 @@ namespace Doctrina.Tests
                 return new Distribution<Action<TState>>(actionDistribution);
             };
     }
+
+
     public static class Math
     {
         // Arg Max 
@@ -157,21 +194,19 @@ namespace Doctrina.Tests
 #if NET45 || NET46 || NET462 || NETSTANDARD2_0
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static int ArgMax<T>(this T[] values)
+        public static T ArgMax<T>(this T[] values)
             where T : IComparable<T>
         {
-            var imax = 0;
             var max = values[0];
             for (var i = 1; i < values.Length; i++)
             {
                 if (values[i].CompareTo(max) > 0)
                 {
                     max = values[i];
-                    imax = i;
                 }
             }
 
-            return imax;
+            return max;
         }
     }
 
