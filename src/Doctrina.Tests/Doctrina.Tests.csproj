@@ -122,8 +122,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="CryptoRandom.cs" />
     <Compile Include="EpsilonGreedyProperties.cs" />
+    <Compile Include="Math.cs" />
+    <Compile Include="PositiveProperFraction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Return.cs" />
+    <Compile Include="Reward.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
