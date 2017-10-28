@@ -1,16 +1,66 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
+using System.Net;
 using System.Threading.Tasks;
 using Doctrina.Tests;
+using Math = Doctrina.Tests.Math;
 using Propability = Doctrina.Tests.PositiveProperFraction;
 
 namespace Doctrina.Tests
 {
+    public static class EnumerableExtensions
+    {
+        private static IEnumerable<double> LinearlySpaced(double start, double end, int partitions) =>
+            Enumerable.Range(0, partitions + 1)
+                .Select(idx => idx != partitions
+                    ? start + (end - start) / partitions * idx
+                    : end);
+
+        /// <summary>
+        /// The calculation of an incremental mean work by correcting the 'error' between what we thought the mean
+        /// 
+        /// </summary>
+        /// <param name="sequence">The sequence.</param>
+        /// <returns></returns>
+        public static double IncrementalMean(this IEnumerable<int> sequence)
+        {
+            var enumerable = sequence as int[] ?? sequence.ToArray();
+            if (enumerable.Length <= 0) return 0;
+            double mean = enumerable[0];
+            
+            for (var k = 1; k < enumerable.Length; k++)
+            {
+                double count = k + 1;
+                var alpha = 1 / count;
+                var target = enumerable[k];
+                mean = mean.Adjust(alpha, target);
+            }
+            return mean;
+        }
+
+        public static IEnumerable<T> Closure<T>(
+            T root,
+            Func<T, IEnumerable<T>> children)
+        {
+            var seen = new HashSet<T>();
+            var stack = new Stack<T>();
+            stack.Push(root);
+
+            while (stack.Count != 0)
+            {
+                var item = stack.Pop();
+                if (seen.Contains(item))
+                    continue;
+                seen.Add(item);
+                yield return item;
+                foreach (var child in children(item))
+                    stack.Push(child);
+            }
+        }
+    }
+
     /// <summary>
     /// A simple example for Reinforcement Learning using table lookup Q-learning method.
     /// An agent "o" is on the left of a 1 dimensional world, the treasure is on the rightmost location.
@@ -37,12 +87,11 @@ namespace Doctrina.Tests
     /// case of a stocastic policy, the policy function is defined as such
     /// </summary>
     /// <typeparam name="TState"></typeparam>
-    /// <typeparam name="TReward"></typeparam>
     /// <param name="state"></param>
     /// <returns></returns>
     public delegate Distribution<Action<TState>> Policy<TState>(TState state, Action<TState>[] ioSpace);
 
-    public class Distribution<T> : ReadOnlyDictionary<T, Propability>
+    public class Distribution<T> : Dictionary<T, Propability>
     {
         public Distribution(IDictionary<T, Propability> dictionary) : base(dictionary)
         {
@@ -70,47 +119,32 @@ namespace Doctrina.Tests
     /// <typeparam name="TState"></typeparam>
     /// <param name="state">An n-tuple (object) containing all the features describing the agent state.</param>
     /// <returns></returns>
-    public delegate Return StateValue<TState>(Value<TState> value);
+    public delegate Return StateValue<in TState>(TState state);
 
-    public struct Value<TState>
+    public delegate double Reward<in TState>(TState state);
+
+    public class State<TState>
     {
-        private readonly double _value;
-        private const double Epsilon = 0.000001;
-        public TState State { get; }
+        public TState Features { get; }
 
-        public Value(TState state, double value)
+        public State(TState features, double value)
         {
-            _value = value;
-            State = state;
+            Features = features;
+            Value = value;
+            TransitionPropabilities = new Distribution<State<TState>>(new Dictionary<State<TState>, PositiveProperFraction>());
         }
 
-        public override bool Equals(object obj)
-        {
-            if (!(obj is Value<TState>))
-            {
-                return false;
-            }
+        public double Value { get; private set; }
 
-            var value = (Value<TState>)obj;
-            return EqualityComparer<TState>.Default.Equals(State, value.State) &&
-                   System.Math.Abs(_value - value._value) < Epsilon;
-        }
+        public Reward ImmediateReward { get; set; }
 
-        public override int GetHashCode()
-        {
-            var hashCode = -2103303312;
-            hashCode = hashCode * -1521134295 + base.GetHashCode();
-            hashCode = hashCode * -1521134295 + EqualityComparer<TState>.Default.GetHashCode(State);
-            hashCode = hashCode * -1521134295 + _value.GetHashCode();
-            return hashCode;
-        }
+        public Distribution<State<TState>> TransitionPropabilities { get; }
 
-        public static bool operator ==(Value<TState> value1, Value<TState> value2) => value1.Equals(value2);
-        public static bool operator !=(Value<TState> value1, Value<TState> value2) => !(value1 == value2);
     }
 
     public static class Policies
     {
+        
         /// <summary>
         /// The epsilon-greedy policy, a value based implicit policy (makes descision based on value function),
         /// either takes a random action with probability epsilon, or it takes the action for the highest
@@ -150,10 +184,41 @@ namespace Doctrina.Tests
 
 namespace ModelFree
 {
+    using static Math;
+
+    public static class MonteCarlo
+    {
+        /// <summary>
+        /// Values the specified alpha.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <param name="state">The state.</param>
+        /// <param name="alpha">The learning rate</param>
+        /// <param name="target">The actual return</param>
+        /// <returns></returns>
+        private static double Value<TState>(this State<TState> state, PositiveProperFraction alpha, Return target)
+            => state.Value.Adjust(alpha, target);
+    }
 
     public static class TemporalDifference
     {
-        public static StateValue<TState> Predict<TState>(TState currentState, PositiveProperFraction alpha, PositiveProperFraction gamma, StateValue<TState> current)
+        /// <summary>
+        /// Gets the estimated value of the current state (how good is it to be in this state?)
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <param name="state">The state.</param>
+        /// <param name="successor">The successor state</param>
+        /// <param name="alpha">The learning rate</param>
+        /// <param name="gamma">The discount value</param>
+        /// <returns></returns>
+        private static Return Value<TState>(this State<TState> state, State<TState> successor, PositiveProperFraction alpha, PositiveProperFraction gamma)
+        {
+            //𝛿
+            var tdTarget = state.ImmediateReward + gamma * successor.Value;
+            return state.Value.Adjust(alpha, tdTarget);
+        }
+
+        public static StateValue<TState> Evaluate<TState>(TState currentState, PositiveProperFraction alpha, PositiveProperFraction gamma, StateValue<TState> current)
         {
             Reward immediateReward = 0;
             return valueOfNextState =>
@@ -164,5 +229,52 @@ namespace ModelFree
                 return @return + alpha * tdError;
             };
         }
+    }
+}
+
+namespace Markov
+{
+    public static class RewardProcess
+    {
+        /// <summary>
+        /// The value of being in the start state (current state) which is the first state in the sample trajectory.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <returns>The state value function</returns>
+        public static Func<double, State<TState>, Return> StateValue<TState>()
+        {
+            return (gamma, state) =>
+            {
+                foreach (var stateTransitionPropability in state.TransitionPropabilities)
+                {
+                    stateTransitionPropability.Key.ImmediateReward =
+                        Return<TState>()(gamma, Enumerable.Repeat(stateTransitionPropability.Key, 1));
+                }
+                var average = state.TransitionPropabilities.Sum(pair => pair.Value * pair.Key.ImmediateReward);
+                return new Return(state.ImmediateReward + gamma * average);
+            };
+        }
+
+        /// <summary>
+        /// The return (Gt) is the total discounted reward for a sample trajectory within a Markov reward process
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <returns></returns>
+        public static Func<double, IEnumerable<State<TState>>, Return> Return<TState>()
+        {
+            return (gamma, sampleTrajectory) => sampleTrajectory.Select((state, k) => (reward: state.ImmediateReward, k: k))
+                .Aggregate(Func<TState>(gamma)).reward;
+        }
+
+        private static Func<(Reward reward, int k), (Reward reward, int k), (Reward reward, int k)> Func<TState>(double gamma)
+        {
+            return (state, successorState) =>
+                (state.reward + System.Math.Pow(gamma, state.k) * successorState.reward, state.k);
+        }
+    }
+
+    public static class DecisionProcess
+    {
+    
     }
 }
