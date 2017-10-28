@@ -1,7 +1,8 @@
 ﻿namespace Doctrina.Tests
 {
     /// <summary>
-    /// Total reward for being in a state S (how 'good' is it to be in state S)
+    /// Total reward for being in a state S at timestep t (how 'good' is it to be in state S). 
+    /// The reward for being in the the current state S only acquired while transitioning to St+1
     /// </summary>
     public struct Reward
     {

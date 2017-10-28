@@ -37,7 +37,6 @@ namespace Doctrina.Tests
     /// case of a stocastic policy, the policy function is defined as such
     /// </summary>
     /// <typeparam name="TState"></typeparam>
-    /// <typeparam name="TReward"></typeparam>
     /// <param name="state"></param>
     /// <returns></returns>
     public delegate Distribution<Action<TState>> Policy<TState>(TState state, Action<TState>[] ioSpace);
@@ -70,47 +69,28 @@ namespace Doctrina.Tests
     /// <typeparam name="TState"></typeparam>
     /// <param name="state">An n-tuple (object) containing all the features describing the agent state.</param>
     /// <returns></returns>
-    public delegate Return StateValue<TState>(Value<TState> value);
+    public delegate Return StateValue<in TState>(TState state);
 
-    public struct Value<TState>
+    public delegate double Reward<in TState>(TState state);
+
+    public class State<TState>
     {
-        private readonly double _value;
-        private const double Epsilon = 0.000001;
-        public TState State { get; }
+        public TState Features { get; }
 
-        public Value(TState state, double value)
+        public State(TState features)
         {
-            _value = value;
-            State = state;
+            Features = features;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (!(obj is Value<TState>))
-            {
-                return false;
-            }
+        public Reward ImmediateReward { get; }
 
-            var value = (Value<TState>)obj;
-            return EqualityComparer<TState>.Default.Equals(State, value.State) &&
-                   System.Math.Abs(_value - value._value) < Epsilon;
-        }
 
-        public override int GetHashCode()
-        {
-            var hashCode = -2103303312;
-            hashCode = hashCode * -1521134295 + base.GetHashCode();
-            hashCode = hashCode * -1521134295 + EqualityComparer<TState>.Default.GetHashCode(State);
-            hashCode = hashCode * -1521134295 + _value.GetHashCode();
-            return hashCode;
-        }
 
-        public static bool operator ==(Value<TState> value1, Value<TState> value2) => value1.Equals(value2);
-        public static bool operator !=(Value<TState> value1, Value<TState> value2) => !(value1 == value2);
     }
 
     public static class Policies
     {
+        
         /// <summary>
         /// The epsilon-greedy policy, a value based implicit policy (makes descision based on value function),
         /// either takes a random action with probability epsilon, or it takes the action for the highest
@@ -163,6 +143,24 @@ namespace ModelFree
                 var tdError = tdTarget - @return;
                 return @return + alpha * tdError;
             };
+        }
+    }
+}
+
+namespace Markov
+{
+    public static class RewardProcess
+    {
+        /// <summary>
+        /// The return is the total discounted reward for a sample trajectory within a Markov reward process
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <returns></returns>
+        public static Func<double, IEnumerable<State<TState>>, Return> Return<TState>()
+        {
+            return (gamma, sampleTrajectory) => new Return(sampleTrajectory.Select(state => state.ImmediateReward)
+                .Aggregate((immediateReward, rewardAfterSuccessorState) =>
+                    immediateReward + gamma * rewardAfterSuccessorState));
         }
     }
 }

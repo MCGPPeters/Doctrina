@@ -1,7 +1,9 @@
-﻿namespace Doctrina.Tests
+﻿using System.Collections.Generic;
+
+namespace Doctrina.Tests
 {
     /// <summary>
-    /// Total discounter reward from a timestamp T on onwards
+    /// Total discounted reward from a timestamp T on onwards
     /// </summary>
     public struct Return
     {
@@ -29,4 +31,6 @@
         public static bool operator !=(Return @return, Return other) => !@return
             .Equals(other.Value);
     }
+
+    public double Return(double immediateReward, PositiveProperFraction gamma, IEnumerable<Reward> rewards)
 }
