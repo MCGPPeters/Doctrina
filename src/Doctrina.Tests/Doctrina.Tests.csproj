@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -123,16 +124,42 @@
   <ItemGroup>
     <Compile Include="Class1.cs" />
     <Compile Include="CryptoRandom.cs" />
+    <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="EpsilonGreedyProperties.cs" />
-    <Compile Include="Math.cs" />
-    <Compile Include="PositiveProperFraction.cs" />
+    <Compile Include="Feature.cs" />
+    <Compile Include="FeatureVector.cs" />
+    <Compile Include="FunctionTypes.cs" />
+    <Compile Include="Math\MatrixTests.cs" />
+    <Compile Include="Math\VectorTests.cs" />
+    <Compile Include="Neural\Layer.cs" />
+    <Compile Include="Math\Operations.cs" />
+    <Compile Include="MonteCarlo.cs" />
+    <Compile Include="Neural\Network.cs" />
+    <Compile Include="Neural\Neuron.cs" />
+    <Compile Include="NeuronProperties.cs" />
+    <Compile Include="Optimization.cs" />
+    <Compile Include="Parameter.cs" />
+    <Compile Include="ParameterVector.cs" />
+    <Compile Include="Policy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Regression.cs" />
+    <Compile Include="Regression.Linear.cs" />
+    <Compile Include="Regression.Logistic.cs" />
     <Compile Include="Return.cs" />
     <Compile Include="Reward.cs" />
+    <Compile Include="RewardProcess.cs" />
+    <Compile Include="State.cs" />
+    <Compile Include="TemporalDifference.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Doctrina\Doctrina.csproj">
+      <Project>{D8E4D317-223A-49E3-BB67-57E9EEC986C4}</Project>
+      <Name>Doctrina</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

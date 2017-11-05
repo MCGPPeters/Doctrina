@@ -1,18 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace Doctrina.Tests
 {
     /// <summary>
-    /// Total discounted reward from a timestamp T on onwards
+    ///     Total discounted reward from a timestamp T on onwards
     /// </summary>
-    public struct Return
+    public struct Return : IComparable<Return>
     {
         public bool Equals(double other) => Value.Equals(other);
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is Return && Equals((Return)obj);
+            return obj is Return && Equals((Return) obj);
         }
 
         public override int GetHashCode() => Value.GetHashCode();
@@ -25,12 +25,14 @@ namespace Doctrina.Tests
 
         public static implicit operator double(Return @return) => @return.Value;
 
+        public static implicit operator Return(Reward value) => new Return(value);
+
         public static bool operator ==(Return @return, Return other) =>
             @return.Equals(other.Value);
 
         public static bool operator !=(Return @return, Return other) => !@return
             .Equals(other.Value);
-    }
 
-    public double Return(double immediateReward, PositiveProperFraction gamma, IEnumerable<Reward> rewards)
+        public int CompareTo(Return other) => Value.CompareTo(other.Value);
+    }
 }
