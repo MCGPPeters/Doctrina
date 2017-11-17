@@ -1,4 +1,4 @@
-﻿namespace numl.Math
+﻿namespace Doctrina.Math
 {
     /// <summary>
     ///     Default values class.
@@ -8,6 +8,6 @@
         /// <summary>
         ///     Default epsilon equal to 1e-8.
         /// </summary>
-        public const double Epsilon = 1e-8;
+        public const double Epsilon = 0.001;
     }
 }

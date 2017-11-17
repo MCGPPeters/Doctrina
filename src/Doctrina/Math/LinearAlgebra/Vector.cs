@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using numl.Math;
 using numl.Math.LinearAlgebra;
 
 namespace Doctrina.Math.LinearAlgebra
@@ -275,7 +276,7 @@ namespace Doctrina.Math.LinearAlgebra
                     return false;
 
                 for (var i = 0; i < Length; i++)
-                    if (this[i] != m[i])
+                    if (System.Math.Abs(this[i] - m[i]) > Defaults.Epsilon)
                         return false;
 
                 return true;

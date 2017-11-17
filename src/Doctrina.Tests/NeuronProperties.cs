@@ -17,9 +17,9 @@ namespace Doctrina.Tests
 
             const double bias = 1d;
             Vector features = new[] {bias, 1d, 0d};
-            var result = neuron(features);
+            Vector result = neuron(features);
 
-            Assert.Equal(new[] {0d}.ToVector(), result);
+            Assert.True(new[] {0d}.ToVector() == result);
         }
 
         [Property(DisplayName = "Neuron can emulate the OR operator")]
