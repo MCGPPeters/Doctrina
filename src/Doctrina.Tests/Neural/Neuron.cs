@@ -14,19 +14,15 @@ namespace Doctrina.Tests.Neural
     /// <summary>
     ///     Create a new neuron based on a parameter vector
     /// </summary>
-    /// <param name="parameterVector">The parameter vector.</param>
+    /// <param name="parameters">The parameter vector.</param>
     /// <returns></returns>
     public delegate Neuron CreateNeuron(Vector parameters);
 
     /// <summary>
     ///     A neuron is a specialisation of a hypothesis where the normalization is an activation
     /// </summary>
-    /// <param name="featureVector">
-    ///     The feature vector. The feature vector always includes a bias feature which has the value
-    ///     1.0 as feature 0
-    /// </param>
     /// <returns></returns>
-    public delegate Vector Neuron(Vector features);
+    public delegate Vector Neuron(Vector inputs);
 
     public static class NeuronRepresentation
     {

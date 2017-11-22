@@ -131,12 +131,13 @@
     <Compile Include="FunctionTypes.cs" />
     <Compile Include="Math\MatrixTests.cs" />
     <Compile Include="Math\VectorTests.cs" />
+    <Compile Include="NetworkTests.cs" />
     <Compile Include="Neural\Layer.cs" />
     <Compile Include="Math\Operations.cs" />
     <Compile Include="MonteCarlo.cs" />
     <Compile Include="Neural\Network.cs" />
     <Compile Include="Neural\Neuron.cs" />
-    <Compile Include="NeuronProperties.cs" />
+    <Compile Include="NeuronTests.cs" />
     <Compile Include="Optimization.cs" />
     <Compile Include="Parameter.cs" />
     <Compile Include="ParameterVector.cs" />
