@@ -349,12 +349,5 @@ namespace Doctrina.Math.LinearAlgebra
         /// <returns>A Matrix[].</returns>
         public static Matrix[] Stats(this Matrix m, VectorType t) => Matrix.Stats(m, t);
 
-        /// <summary>
-        ///     computes matrix determinant NOTE: currently using cholesky factorization to save time so non
-        ///     symmetric positive semi-definite matrices will cause problems...
-        /// </summary>
-        /// <param name="m">Matrix.</param>
-        /// <returns>Determinant.</returns>
-        public static double Det(this Matrix m) => Matrix.Det(m);
     }
 }

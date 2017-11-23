@@ -1,6 +1,7 @@
-﻿namespace Doctrina.Tests.Neural
+﻿using System;
+
+namespace Doctrina.Tests.Neural
 {
-    public static class Network
-    {
-    }
+    
+
 }

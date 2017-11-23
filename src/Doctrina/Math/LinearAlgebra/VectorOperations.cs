@@ -157,40 +157,10 @@ namespace Doctrina.Math.LinearAlgebra
                 throw new InvalidOperationException("Dimensions do not match!");
 
             var result = one.ToArray();
-            for (var i = 0; i < one.Length; i++)
+            for (int i = 0; i < one.Length; i++)
                 result[i] *= two[i];
             return new Vector(result);
         }
-
-        /// <summary>Multiplication operator.</summary>
-        /// <param name="one">The one.</param>
-        /// <param name="two">The two.</param>
-        /// <returns>The result of the operation.</returns>
-        public static Vector operator *(Vector one, double two)
-        {
-            var result = one.ToArray();
-            for (var i = 0; i < one.Length; i++)
-                result[i] *= two;
-            return new Vector(result);
-        }
-
-        /// <summary>Multiplication operator.</summary>
-        /// <param name="one">The one.</param>
-        /// <param name="two">The two.</param>
-        /// <returns>The result of the operation.</returns>
-        public static Vector operator *(Vector one, int two)
-        {
-            var result = one.ToArray();
-            for (var i = 0; i < one.Length; i++)
-                result[i] *= two;
-            return new Vector(result);
-        }
-
-        /// <summary>Multiplication operator.</summary>
-        /// <param name="one">The one.</param>
-        /// <param name="two">The two.</param>
-        /// <returns>The result of the operation.</returns>
-        public static Vector operator *(double one, Vector two) => two * one;
 
         /// <summary>Division operator.</summary>
         /// <param name="one">The one.</param>

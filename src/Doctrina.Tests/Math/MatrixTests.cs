@@ -304,40 +304,7 @@ namespace numl.Tests.MathTests
             Assert.Equal(covTruth, cov);
         }
 
-        [Fact]
-        public void Matrix_Determinant_Test()
-        {
-            Matrix x = new[,]
-            {
-                {-2, 2, 3},
-                {-1, 1, 3},
-                {2, 0, 1}
-            };
 
-            Assert.Equal(6, x.Det());
-
-            Matrix m = new[,]
-            {
-                {1, 2, 2, 1},
-                {1, 2, 4, 2},
-                {2, 7, 5, 2},
-                {-1, 4, -6, 3}
-            };
-
-            // -42 + residual
-            var det = m.Det();
-
-            Matrix q = new[,]
-            {
-                {3, 2, -1, 4},
-                {2, 1, 5, 7},
-                {0, 5, 2, -6},
-                {-1, 2, 1, 0}
-            };
-
-            // -418
-            var qd = q.Det();
-        }
 
         [Fact]
         public void Matrix_Doolittle_Pivot_Test()
@@ -701,24 +668,6 @@ namespace numl.Tests.MathTests
             Assert.Equal(true, one != two);
         }
 
-        [Fact]
-        public void Matrix_QR_Test()
-        {
-            Matrix A = new[,]
-            {
-                {4, 1, 2},
-                {1, 4, 0},
-                {2, 0, 4}
-            };
-
-            var t = Matrix.QR(A);
-            var Q = t.Item1;
-            var R = t.Item2;
-
-            // close enough...
-            var diff = A.Norm() - (Q * R).Norm();
-            Assert.Equal(0, diff);
-        }
 
         [Fact]
         public void Matrix_Read_Value_Bad_Index_Test()

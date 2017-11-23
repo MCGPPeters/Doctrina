@@ -57,6 +57,10 @@ namespace Doctrina.Math
         public Lambda(double value) : base(value)
         {
         }
+
+        public static implicit operator Lambda(double value) => new Lambda(value);
+
+        public static implicit operator double(Lambda @return) => @return.Value;
     }
 
     public sealed class Epsilon : ProperFraction
@@ -64,5 +68,9 @@ namespace Doctrina.Math
         public Epsilon(double value) : base(value)
         {
         }
+
+        public static implicit operator Epsilon(double value) => new Epsilon(value);
+
+        public static implicit operator double(Epsilon @return) => @return.Value;
     }
 }

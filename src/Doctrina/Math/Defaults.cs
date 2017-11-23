@@ -9,5 +9,7 @@
         ///     Default epsilon equal to 1e-8.
         /// </summary>
         public const double Epsilon = 0.001;
+
+        public const double Bias = 1d;
     }
 }

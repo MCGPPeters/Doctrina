@@ -275,29 +275,6 @@ namespace Doctrina.Math.LinearAlgebra
             return m;
         }
 
-        /// <summary>Modified Gram-Schmidt QR Factorization.</summary>
-        /// <param name="A">Matrix A.</param>
-        /// <returns>Tuple(Q, R)</returns>
-        public static Tuple<Matrix, Matrix> QR(Matrix A)
-        {
-            var n = A.Rows;
-            var R = Zeros(n);
-            var Q = A.Copy();
-            for (var k = 0; k < n; k++)
-            {
-                R[k, k] = Q[k, VectorType.Col].Norm();
-                Q[k, VectorType.Col] = Q[k, VectorType.Col] / R[k, k];
-
-                for (var j = k + 1; j < n; j++)
-                {
-                    R[k, j] = Vector.Dot(Q[k, VectorType.Col], A[j, VectorType.Col]);
-                    Q[j, VectorType.Col] = Q[j, VectorType.Col] - R[k, j] * Q[k, VectorType.Col];
-                }
-            }
-
-            return new Tuple<Matrix, Matrix>(Q, R);
-        }
-
         /// <summary>Backwards.</summary>
         /// <param name="A">Input Matrix.</param>
         /// <param name="b">The Vector to process.</param>
@@ -839,48 +816,6 @@ namespace Doctrina.Math.LinearAlgebra
             for (var i = 0; i < length; i++)
                 result[i] = x[i, type].Stats();
             return result;
-        }
-
-        /// <summary>Dets the given x coordinate.</summary>
-        /// <exception cref="InvalidOperationException">Thrown when the requested operation is invalid.</exception>
-        /// <param name="x">Matrix x.</param>
-        /// <returns>A double.</returns>
-        public static double Det(Matrix x)
-        {
-            //     0, 1, 2
-            //    --------
-            // 0 | a, b, c
-            // 1 | d, e, f
-            // 2 | g, h, i
-
-            if (x.Rows != x.Cols)
-                throw new InvalidOperationException("Can only compute determinants of square matrices");
-            var n = x.Rows;
-            if (n == 1)
-                return x[0, 0];
-            if (n == 2)
-                return x[0, 0] * x[1, 1] - x[0, 1] * x[1, 0];
-            if (n == 3) // aei + bfg + cdh - ceg - bdi - afh
-                return x[0, 0] * x[1, 1] * x[2, 2] +
-                       x[0, 1] * x[1, 2] * x[2, 0] +
-                       x[0, 2] * x[1, 0] * x[2, 1] -
-                       x[0, 2] * x[1, 1] * x[2, 0] -
-                       x[0, 1] * x[1, 0] * x[2, 2] -
-                       x[0, 0] * x[1, 2] * x[2, 1];
-            // ruh roh, time for generalized determinant
-            // to save time we'll do a cholesky factorization
-            // (note, this requires a symmetric positive-semidefinite
-            // matrix or it might explode....)
-            // and square the product of the diagonals
-            //return System.Math.Pow(x.Cholesky().Diag().Prod(), 2);
-
-            // switched to QR since it is safer...
-            // fyi:  determinant of a triangular matrix is the
-            //       product of its diagonals
-            // also: det(AB) = det(A) * det(B)
-            // that's how we come up with this crazy thing
-            var qr = QR(x);
-            return qr.Item1.Diag().Prod() * qr.Item2.Diag().Prod();
         }
     }
 }
