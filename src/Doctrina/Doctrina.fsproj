@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Doctrina.fs" />
+    <Compile Include="Math.Pure.Structure.Order.fs" />
+    <Compile Include="Math.Pure.Numbers.fs" />
+    <Compile Include="Math.Pure.Algebra.Structures.fs" />
+    <Compile Include="Math.Pure.Change.Calculus.fs" />
+    <Compile Include="Hyperparameter.fs" />
+    <Compile Include="Collections.fs" />
+    <Compile Include="Math.Pure.Algebra.Linear.fs" />
+    <Compile Include="Math.Applied.Optimization.fs" />
+    <Compile Include="Doctrina.Learning.Reinforced.fs" />
+    <Compile Include="Math.Applied.Learning.Evolutionary.fs" />
+    <Compile Include="Math.Applied.Probability.fs" />
+    <Compile Include="Caching.fs" />
+  </ItemGroup>
+</Project>
