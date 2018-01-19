@@ -1,30 +1,45 @@
 namespace Doctrina.Math.Applied.Probability
 
+// A figure of merit is a quantity used to characterize the performance
+type Merit<'a when 'a : comparison> = Merit of 'a
+
 type Probability = float
 
-type Distribution<'a> = ('a * Probability) list
+type Distribution<'a> = Distribution of ('a * Probability) list
+
+type Transition<'a> = 'a -> Distribution<'a>
 
 type Probabilistic<'a, 'b> = 'a -> Distribution<'b>
 
 type Spread<'a> = 'a list -> Distribution<'a>
 
-type Event<'a> = 'a -> bool
+type Outcome<'a> = Outcome of 'a
+
+// An event is a characterization of a list of outcomes, like "head occured within two coin flips" => 
+type Event<'a> = Outcome<'a> list
+
+// a sample space which is the set of all possible outcomes. I
+type Samples<'a> = Samples of Outcome<'a> list
+
+type Experiment<'a> = Outcome<'a> list -> Distribution<Event<'a>>
+
+// is a function that maps an event or values of one or more variables 
+// onto a real number intuitively representing some "cost" associated with the event.
+type Objective<'a, 'TMerit when 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
 
 type Sample< ^a when ^a: comparison > = 
     Sample of Set<'a>
 
 module Distribution = 
-
-    let uniform seq : Distribution<'a> =
-        let length = List.length seq
-        seq 
-        |> List.map (fun e -> 
+    let uniform list : Distribution<'a> =
+        let length = List.length list
+        list 
+        |>  List.map (fun e -> 
             (e , (1.0 / float length)))
+        |> Distribution        
 
-    let impossible : Distribution<'a> = []
-        
-
-    let certainly a : Distribution<'a> = [(a, 1.0)]
+    let impossible : Distribution<'a> = Distribution []
+    let certainly a : Distribution<'a> = Distribution [(a, 1.0)]
 
 module Computation = 
 
@@ -36,42 +51,44 @@ module Computation =
     let inline return' a : Distribution<'a> =   
         certainly a
 
-    let join f (d: Distribution<'a>) (d': Distribution<'b>) : Distribution<'c> =
-            [for x in d do
-             for y in d' do
-             yield (f (outcome x) (outcome y), (probability y) * (probability x))]
+    let join f (Distribution d) (Distribution d') : Distribution<'c> =
+            Distribution [for x in d do
+                             for y in d' ->
+                             (f (outcome x) (outcome y), (probability y) * (probability x))]
 
     let pair x y = (x, y) 
     
 
     // https://queue.acm.org/detail.cfm?id=3055303
-    let inline bind (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> = 
-              [for x in prior do
-               for y in likelihood (outcome x) do 
-               yield (outcome y, (probability y) * (probability x))] 
+    let inline bind (Distribution prior) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
+              Distribution [for x in prior do
+                            let  (Distribution distribution) = (likelihood (outcome x))
+                            for y in distribution ->
+                               (outcome y, (probability y) * (probability x))] 
 
     ///mapD :: (a -> b) -> Dist a -> Dist b
-    let inline map (f: 'a -> 'b) (distribution: Distribution<'a>) : Distribution<'b> = 
-             [for x in distribution do
-               for y in f (outcome x) do 
-               yield (y, probability x)]    
+    let inline map f (Distribution distribution) : Distribution<'b> = 
+             Distribution [for x in distribution do
+                              for y in f (outcome x) -> 
+                              (y, probability x)]    
 
-    let inline apply (fDistribution: Distribution<'a -> 'b>) (distribution: Distribution<'a>) : Distribution<'b> = 
-             [for x in distribution do
-              for f in fDistribution do 
-              for y in (fst f) (outcome x) do
-              yield (y, probability x)]                   
+    let inline apply (Distribution fDistribution) (Distribution distribution) : Distribution<'b> = 
+             Distribution [for x in distribution do
+                              for f in fDistribution do 
+                              for y in (fst f) (outcome x) ->
+                              (y, probability x)]                   
 
-    let inline filter (distribution: Distribution<'a>) predicate : Distribution<'a> =
+    let inline filter (Distribution distribution) predicate : Distribution<'a> =
        distribution 
        |> List.filter predicate
+       |> Distribution
 
-    let inline (?) (predicate: 'a -> bool) (distribution: Distribution<'a>) : Probability =
+    let inline (?) (predicate: 'a -> bool) (Distribution distribution) : Probability =
        distribution 
        |> List.filter (fun x -> predicate (fst x))
        |> List.sumBy snd
 
-    let inline argMax (distribution: Distribution<'a>) =
+    let inline argMax (Distribution distribution) =
         distribution |> List.maxBy (fun x -> probability x)
         // can be rewriten using eta reduction as => distribution |> Seq.maxBy snd |> fst
 
@@ -85,7 +102,11 @@ module Computation =
 
     let probabilistic = DistributionMonadBuilder()
 
-    let selectOne collection = uniform [ for v in collection do yield (v, List.filter (fun x -> x <> v) collection)]
+module Collections =
+
+    open Computation
+    open Distribution
+    let selectOne collection = uniform [ for v in collection -> (v, List.filter (fun x -> x <> v) collection)]
 
     let rec selectMany n collection = 
         match n with
@@ -95,13 +116,13 @@ module Computation =
                     let! (c2, xs) = selectMany (n - 1) x
                     return ((c1::c2), xs) }
 
-    let select n collection = selectMany n (map (collection |> List.rev) collection) 
+    let inline select (n: int) = (selectMany n) >> map (fst >> List.rev)
 
     type Die = int
 
     let die = uniform [1..6]
 
-    let rec dice numberOfThrows : Distribution<Die list>= 
+    let rec dice numberOfThrows : Distribution<Die list> = 
         match numberOfThrows with
         | 0 -> certainly []
         | _ -> join (fun x y -> x :: y) (die) (dice (numberOfThrows - 1)) 
@@ -110,3 +131,24 @@ module Computation =
     let twoSixes = (fun x -> x = [6;6]) ? (dice 2)
 
     let gt3 = (fun x -> x > 3) ? (die);;
+
+module Sampling = 
+
+    type Randomized<'a> = Randomized of 'a
+
+    let rec scan (probability: Probability) (Distribution distribution) =
+        match distribution with 
+        | [] -> Randomized None
+        | (x, probability')::xs -> 
+                match (probability <= probability') || xs = List.empty with
+                | true -> Randomized (Some x)
+                | _ -> scan (probability - probability') (Distribution xs) 
+
+    let inline select distribution probability = 
+        scan probability distribution
+
+    let pick distribution = 
+        let r = System.Random()
+        select distribution (r.NextDouble())
+
+    let random t = t >> pick    

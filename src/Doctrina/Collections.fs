@@ -22,12 +22,10 @@ namespace Doctrina.Collections
 
         let inline zip xs ys = 
             let rec loop xs ys =
-                let a' = LanguagePrimitives.GenericZero
-                let b' = LanguagePrimitives.GenericZero
                 match (xs, ys) with
                 | x::xs, y::ys -> (x, y) :: loop xs ys
-                | [], ys -> List.zip (List.replicate ys.Length a') ys
-                | xs, [] -> List.zip xs (List.replicate xs.Length b')
+                | [], ys -> List.zip (List.replicate ys.Length None) ys
+                | xs, [] -> List.zip xs (List.replicate xs.Length None)
             loop xs ys 
 
     module Set =
