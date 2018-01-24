@@ -17,8 +17,6 @@ type Locus = int
 
 type ChromosomeId = GenomeId of int
 
-type Genes<'TGene> = (Locus * Gene<'TGene> option) list
-
 [<NoComparison>]
 [<NoEquality>]
 // A Genome is the primary source of genotype information used to create
@@ -70,6 +68,9 @@ module Objective =
 module Recombination = 
 
     open Objective
+
+    let rec add gene genes = 
+        List.append genes [((List.length genes) + 1, gene)]
 
     type Worthiness<'a> =
     | Worthy of 'a

@@ -13,6 +13,8 @@ module Neat =
     open Doctrina.Math.Applied.Probability.Distribution
     open Doctrina.Math.Applied.Probability.Sampling
 
+    // add a connection to a chromosome, fill the gap in loci with empty genes
+    // so line up can always occur easily
     let rec addConnection (connectionGene: Gene<Connection>) locus (genes: (Locus * Gene<Connection> option) list) =
         match genes with
         | [] -> [(locus, Some connectionGene)]
@@ -27,15 +29,20 @@ module Neat =
     let addConnection (connection: Gene<Connection>) locus (chromosome: Chromosome<Connection>) =
         {chromosome with Genes = (addConnection connection locus chromosome.Genes)}
 
+    let rec allign (xs: (Locus * Gene<'TGene>) list) (ys: (Locus * Gene<'TGene>) list) =
+        match (xs, ys) with
+        | x :: xs, y :: ys -> 
+            match (fst x, fst y) with
+            | (xl, yl) when xl = yl -> (xl, (Some (snd x), Some (snd y))) :: allign xs ys
+            | (xl, yl) when xl < yl -> (xl, (Some (snd x), None)) :: allign xs (y::ys)
+            | (xl, yl) when xl > yl -> (yl, (None, Some (snd y))) :: allign (x::xs) ys
+            | _ -> []
+        | [], ys -> List.map (fun z -> (fst z, (None, Some (snd z)) )) ys 
+        | xs, [] -> List.map (fun z -> (fst z, (None, Some (snd z)) )) xs      
 
-    // let inline allign (Chromesome c)(Chromosome c') =
-    //     let rec loop xs ys =
-    //         match (xs, ys) with
-    //         | x :: xs, y :: ys -> 
-    //             match (x.Locus, y.Locus) with
-    //             | (l, l') when l = l' -> (x, y) :: loop xs ys
-    //             | (l, l') when l < l' ->  
-    //     loop c.Genes c'.Genes            
+    let inline allign (c: Chromosome<Connection>)(c': Chromosome<Connection>) =
+        
+          
                            
 
     // let recombine (Parent worthy) (Parent less) =
