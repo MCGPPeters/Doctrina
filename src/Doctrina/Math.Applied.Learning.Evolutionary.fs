@@ -3,35 +3,36 @@ namespace Doctrina.Math.Applied.Learning.Evolutionary
 open Doctrina
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Learning
+open System.Runtime.InteropServices
 
 type GeneId = GeneId of int
 
-[<NoComparison>]
-[<NoEquality>]
 type Gene<'TGene> = {
     Id: GeneId
-    Type: 'TGene
+    Alleles: 'TGene list
     Enabled: bool
 }
 
-type Locus = Locus of int
+type Locus = int
 
-type GenomeId = GenomeId of int
+type ChromosomeId = GenomeId of int
+
+type Genes<'TGene> = (Locus * Gene<'TGene> option) list
 
 [<NoComparison>]
 [<NoEquality>]
 // A Genome is the primary source of genotype information used to create
 // a phenotype.
 type Chromosome<'TGene> = {
-    Id: GenomeId
-    Genes: Map<Locus, Gene<'TGene>> 
+    Id: ChromosomeId
+    Genes: (Locus * Gene<'TGene> option) list
 }
 
 // A mate is a genome that has been assigned
 // a figure of merit (according to its Objective) so that it can be selected
 // to reproduce based
 type Mate<'TGene, 'TMerit when 'TMerit: comparison> = {
-    Genome: Chromosome<'TGene>
+    Chromosome: Chromosome<'TGene>
     Merit: Merit<'TMerit>
 }
 
@@ -70,14 +71,18 @@ module Recombination =
 
     open Objective
 
-    type Worthiest<'TGene, 'TMerit when 'TMerit: comparison> = Mate<'TGene, 'TMerit> -> Mate<'TGene, 'TMerit> -> Mate<'TGene, 'TMerit> option
-    let fittest : Worthiest<'TGene, Fitness> =
+    type Worthiness<'a> =
+    | Worthy of 'a
+    | Less of 'a
+
+    type Worthiness<'TGene, 'TMerit when 'TMerit: comparison> = Mate<'TGene, 'TMerit> -> Mate<'TGene, 'TMerit> -> (Worthiness<Mate<'TGene, 'TMerit> > * Worthiness<Mate<'TGene, 'TMerit> >)
+    let fittest : Worthiness<'TGene, Fitness> =
         (fun mate1 mate2 ->
             match mate1.Merit = mate2.Merit with
-            | true -> None
+            | true -> (Worthy mate1, Worthy mate2)
             | _ -> match mate1.Merit > mate2.Merit with
-                    | true -> Some mate1
-                    | false -> Some mate2)
+                    | true -> (Worthy mate1, Less mate2)
+                    | false -> (Less mate1, Worthy mate2))
 
 
 

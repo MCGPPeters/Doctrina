@@ -2,7 +2,7 @@ namespace Doctrina.Math.Applied.Learning.Neural
 
 open Doctrina
 
-type NodeId = NeuronId of int
+type NodeId = NodeId of int
 
 [<NoComparison>]
 [<NoEquality>]
@@ -36,12 +36,12 @@ type Node =
 | InterNeuron of InterNeuron
 | AfferentNeuron of AfferentNeuron
 
-type ConnectionId = SynapseId of int
+type ConnectionId = ConnectionId of int
 
 [<NoComparison>]
 [<NoEquality>]
 type Connection = {
-    SynapseId: ConnectionId
+    Id: ConnectionId
     Input: NodeId
     Output: NodeId
     Weight: float
@@ -54,5 +54,5 @@ type NetworkId = NetworkId of int
 type Network = {
     Id: NetworkId    
     Nodes : Node list
-    Synapses : Connection list
+    Connections : Connection list
 }
