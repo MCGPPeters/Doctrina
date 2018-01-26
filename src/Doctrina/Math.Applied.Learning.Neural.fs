@@ -4,14 +4,10 @@ open Doctrina
 
 type NodeId = NodeId of int
 
-[<NoComparison>]
-[<NoEquality>]
 type InterNeuron = {
     Id: NodeId
 }
 
-[<NoComparison>]
-[<NoEquality>]
 // transmit signals from the central nervous system to the effector cells 
 // and are also called motor neurons.
 type EfferentNeuron = {
@@ -20,8 +16,6 @@ type EfferentNeuron = {
 
 type MotorNeuron = EfferentNeuron
 
-[<NoComparison>]
-[<NoEquality>]
 // convey information from tissues and organs into the central nervous system 
 // and are also called sensory neurons.
 type AfferentNeuron = {
@@ -38,8 +32,6 @@ type Node =
 
 type ConnectionId = ConnectionId of int
 
-[<NoComparison>]
-[<NoEquality>]
 type Connection = {
     Id: ConnectionId
     Input: NodeId
@@ -49,8 +41,6 @@ type Connection = {
 
 type NetworkId = NetworkId of int
 
-[<NoComparison>]
-[<NoEquality>]
 type Network = {
     Id: NetworkId    
     Nodes : Node list

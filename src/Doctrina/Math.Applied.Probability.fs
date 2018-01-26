@@ -138,10 +138,10 @@ module Sampling =
 
     let rec scan (probability: Probability) (Distribution distribution) =
         match distribution with 
-        | [] -> Randomized None
+        | [] -> None 
         | (x, probability')::xs -> 
                 match (probability <= probability') || xs = List.empty with
-                | true -> Randomized (Some x)
+                | true -> Some (Randomized x)
                 | _ -> scan (probability - probability') (Distribution xs) 
 
     let inline select distribution probability = 

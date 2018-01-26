@@ -15,15 +15,13 @@ type Gene<'TGene> = {
 
 type Locus = int
 
-type ChromosomeId = GenomeId of int
+type ChromosomeId = ChromosomeId of int
 
-[<NoComparison>]
-[<NoEquality>]
 // A Genome is the primary source of genotype information used to create
 // a phenotype.
 type Chromosome<'TGene> = {
     Id: ChromosomeId
-    Genes: (Locus * Gene<'TGene> option) list
+    Genes: (Locus * Gene<'TGene>) list
 }
 
 // A mate is a genome that has been assigned
@@ -43,7 +41,7 @@ type Population<'TGene> = Population of Chromosome<'TGene> list
 // Recombination is the production of offspring of traits that differ from those found in either parent
 // Crossover is an example, which process leads to offspring having different combinations of genes from those of their parents
 // In gene conversion, however,  section of genetic material is copied from one chromosome to another, without the donating chromosome being changed.
-type Recombination<'TGene, 'TMerit when 'TMerit: comparison> =  Parent<'TGene, 'TMerit> -> Parent<'TGene, 'TMerit> -> Genome<'TGene>
+type Recombination<'TGene, 'TMerit when 'TMerit: comparison> =  Parent<'TGene, 'TMerit> -> Parent<'TGene, 'TMerit> -> Chromosome<'TGene>
 
 type Crossover<'TGene, 'TMerit when 'TMerit: comparison> = Recombination<'TGene, 'TMerit>
 
@@ -71,6 +69,9 @@ module Recombination =
 
     let rec add gene genes = 
         List.append genes [((List.length genes) + 1, gene)]
+
+    let add (gene: Gene<'a>)(chromosome: Chromosome<'a>) =
+        {chromosome with Genes = (add (gene) chromosome.Genes)}    
 
     type Worthiness<'a> =
     | Worthy of 'a

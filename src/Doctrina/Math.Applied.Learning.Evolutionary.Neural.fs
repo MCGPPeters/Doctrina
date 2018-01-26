@@ -9,7 +9,7 @@ type NetworkGene = NetworkGene of Gene<Network>
 
 module Neat =
 
-    open Doctrina.Math.Applied.Learning.Evolutionary
+    open Doctrina.Math.Applied.Learning.Evolutionary.Recombination
     open Doctrina.Math.Applied.Probability.Distribution
     open Doctrina.Math.Applied.Probability.Sampling
 
@@ -26,9 +26,6 @@ module Neat =
                         let fill = [loc + 1 .. locus - 1] |> List.map (fun a -> (a, gene))
                         x :: List.append fill (addConnection connectionGene locus xs)
 
-    let addConnection (connection: Gene<Connection>) locus (chromosome: Chromosome<Connection>) =
-        {chromosome with Genes = (addConnection connection locus chromosome.Genes)}
-
     let rec allign (xs: (Locus * Gene<'TGene>) list) (ys: (Locus * Gene<'TGene>) list) =
         match (xs, ys) with
         | x :: xs, y :: ys -> 
@@ -38,23 +35,56 @@ module Neat =
             | (xl, yl) when xl > yl -> (yl, (None, Some (snd y))) :: allign (x::xs) ys
             | _ -> []
         | [], ys -> List.map (fun z -> (fst z, (None, Some (snd z)) )) ys 
-        | xs, [] -> List.map (fun z -> (fst z, (None, Some (snd z)) )) xs      
-
-    let inline allign (c: Chromosome<Connection>)(c': Chromosome<Connection>) =
-        
-          
-                           
-
-    // let recombine (Parent worthy) (Parent less) =
-    //     Doctrina.Collections.List.zip worthy.Chromosome.Genes less.Chromosome.Genes
-    //     |> List.map (fun genes -> 
-    //                     match genes with
-    //                     | (Some worthy, Some less) -> 
-    //                         let gene = uniform[worthy;less] |> pick
-    //                         let (Randomized gene) = gene
-    //                         gene
-    //                     | (None, _) -> None
-    //                     | (Some worthy, _) -> Some worthy)                                     
+        | xs, [] -> List.map (fun z -> (fst z, (None, Some(snd z)) )) xs         
+    
+    let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit> >) =
+        match (mom, dad) with
+        | (Worthy mom, Worthy dad) | (Less mom, Less dad)-> 
+          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          |> List.map (fun genes -> 
+                        match genes with
+                        // Genes on the same locus get picked at random from the 2 parents
+                        | (l, (m, d )) -> 
+                            let gene = uniform[m;d] |> pick
+                            match gene with
+                            | Some gene -> 
+                                let (Randomized (Some gene)) = gene
+                                Some (l, gene)
+                            | None -> None)      
+        | (Worthy mom, Less dad) -> 
+          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          |> List.map (fun genes -> 
+                        match genes with
+                        // Genes on the same locus get picked at random from the 2 parents
+                        | (l, (Some mom, Some dad)) -> 
+                            let gene = uniform[Some mom;Some dad] |> pick
+                            match gene with
+                            | Some gene -> 
+                                let (Randomized (Some gene)) = gene
+                                Some (l, gene)
+                            | _ ->  None
+                        | (l, (mom, _)) -> 
+                            // always pick moms genes
+                            match mom with
+                            | Some m -> Some (l, m)
+                            | _ -> None)
+        | (Less mom, Worthy dad) -> 
+          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          |> List.map (fun genes -> 
+                        match genes with
+                        // Genes on the same locus get picked at random from the 2 parents
+                        | (l, (Some mom, Some dad)) -> 
+                            let gene = uniform[Some mom;Some dad] |> pick
+                            match gene with
+                            | Some gene -> 
+                                let (Randomized (Some gene)) = gene
+                                Some (l, gene)
+                            | _ -> None
+                        // Always pick dads genes                        
+                        | (l, (_, dad)) -> 
+                            match dad with
+                            | Some d -> Some (l, d)
+                            | _ -> None)                                                                                               
 
     // For every point in each Genome, where each Genome shares
     // the innovation number, the Gene is chosen randomly from
@@ -63,14 +93,8 @@ module Neat =
     // if it is from the more fit parent.
     let recombine (wortiness: Recombination.Worthiness<NetworkGene, 'TMerit>) : Recombination<NetworkGene, 'TMerit> = 
         (fun (Parent mom) (Parent dad) ->
-            let offspring = match wortiness mom dad with
-                | (Worthy mom, Worthy dad) -> 
-                    //
-                | (Less mom, Worthy dad) ->
-                        //List.map (fun (x, y) -> uniform [x;y] |> pick)
-                | (Worthy mom, Less dad) -> 
-                    match List.length mom.Genome.Genes > List.length dad.Genome.Genes with
-                            | true -> mom
-                            | _ -> dad
+            let (mom, dad) = wortiness mom dad   
+            let offspring = crossover mom dad |> List.choose id      
+            {Id = ChromosomeId 2; Genes = offspring})
 
 
