@@ -1,8 +1,10 @@
 namespace Doctrina.Math.Applied.Learning.Neural
 
 open Doctrina
+open System
+open Doctrina.Math.Applied.Probability.Sampling
 
-type NodeId = NodeId of int
+type NodeId = NodeId of Randomized<Guid>
 
 type InterNeuron = {
     Id: NodeId
@@ -30,7 +32,8 @@ type Node =
 | InterNeuron of InterNeuron
 | AfferentNeuron of AfferentNeuron
 
-type ConnectionId = ConnectionId of int
+
+type ConnectionId = ConnectionId of Randomized<Guid>
 
 type Connection = {
     Id: ConnectionId
@@ -38,6 +41,20 @@ type Connection = {
     Output: NodeId
     Weight: float
 }
+
+module Connection = 
+    open Doctrina.Math.Applied.Probability.Sampling
+
+    let create id input output weightDistrubution = 
+        match weightDistrubution |> pick with
+        | Some (Randomized weight) -> 
+            Ok {
+                Id = (ConnectionId id)
+                Input = input
+                Output = output
+                Weight = weight
+            }
+        | None -> Error "The distibution of wieghts was empty"        
 
 type NetworkId = NetworkId of int
 

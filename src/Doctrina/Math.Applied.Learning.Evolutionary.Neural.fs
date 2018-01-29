@@ -4,8 +4,9 @@ open Doctrina.Math.Applied.Learning.Neural
 open Doctrina.Math.Applied.Learning.Evolutionary
 open Doctrina.Math.Applied.Probability
 open Doctrina.Collections
+open MassTransit
 
-type NetworkGene = NetworkGene of Gene<Network>
+type ConnectionGene = Gene<Connection>
 
 module Neat =
 
@@ -13,88 +14,113 @@ module Neat =
     open Doctrina.Math.Applied.Probability.Distribution
     open Doctrina.Math.Applied.Probability.Sampling
 
-    // add a connection to a chromosome, fill the gap in loci with empty genes
-    // so line up can always occur easily
-    let rec addConnection (connectionGene: Gene<Connection>) locus (genes: (Locus * Gene<Connection> option) list) =
-        match genes with
-        | [] -> [(locus, Some connectionGene)]
-        | x::xs -> match x with
-                    | (loc, _) when locus < loc -> 
-                        (locus, Some connectionGene) :: x :: xs  
-                    | (loc, _) -> 
-                        let gene: Gene<Connection> option = None
-                        let fill = [loc + 1 .. locus - 1] |> List.map (fun a -> (a, gene))
-                        x :: List.append fill (addConnection connectionGene locus xs)
-
-    let rec allign (xs: (Locus * Gene<'TGene>) list) (ys: (Locus * Gene<'TGene>) list) =
+    let rec allign (xs: Gene<'TGene> list) (ys: Gene<'TGene> list) =
+        let xs = List.sortBy (fun x -> x.Locus) xs
+        let ys = List.sortBy (fun y -> y.Locus) ys
         match (xs, ys) with
         | x :: xs, y :: ys -> 
-            match (fst x, fst y) with
-            | (xl, yl) when xl = yl -> (xl, (Some (snd x), Some (snd y))) :: allign xs ys
-            | (xl, yl) when xl < yl -> (xl, (Some (snd x), None)) :: allign xs (y::ys)
-            | (xl, yl) when xl > yl -> (yl, (None, Some (snd y))) :: allign (x::xs) ys
+            match (x, y) with
+            | (xl, yl) when xl.Locus = yl.Locus -> (Some x, Some y) :: allign xs ys
+            | (xl, yl) when xl.Locus < yl.Locus -> (Some x, None) :: allign xs (y::ys)
+            | (xl, yl) when xl.Locus > yl.Locus -> (None, Some y) :: allign (x::xs) ys
             | _ -> []
-        | [], ys -> List.map (fun z -> (fst z, (None, Some (snd z)) )) ys 
-        | xs, [] -> List.map (fun z -> (fst z, (None, Some(snd z)) )) xs         
+        | [], ys -> List.map (fun z -> (None, Some z)) ys 
+        | xs, [] -> List.map (fun z -> (None, Some z)) xs
+
+    let pickGene distribution = 
+        let gene = distribution |> pick
+        match gene with
+        | Some gene -> 
+            let (Randomized gene) = gene
+            match gene with
+            | Some g -> Some g
+            | None -> None
+        | _ -> None
     
-    let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit> >) =
+    let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit>>) =
         match (mom, dad) with
-        | (Worthy mom, Worthy dad) | (Less mom, Less dad)-> 
+        | (Worthy mom, Worthy dad) | (Less mom, Less dad) -> 
           allign mom.Chromosome.Genes dad.Chromosome.Genes
-          |> List.map (fun genes -> 
-                        match genes with
+          |> List.map (fun genePair -> 
+                        match genePair with
                         // Genes on the same locus get picked at random from the 2 parents
-                        | (l, (m, d )) -> 
-                            let gene = uniform[m;d] |> pick
-                            match gene with
-                            | Some gene -> 
-                                let (Randomized (Some gene)) = gene
-                                Some (l, gene)
-                            | None -> None)      
+                        | (mom, dad) -> 
+                            let gene = uniform[mom; dad]
+                            pickGene gene)      
         | (Worthy mom, Less dad) -> 
           allign mom.Chromosome.Genes dad.Chromosome.Genes
-          |> List.map (fun genes -> 
-                        match genes with
+          |> List.map (fun genePair -> 
+                        match genePair with
                         // Genes on the same locus get picked at random from the 2 parents
-                        | (l, (Some mom, Some dad)) -> 
-                            let gene = uniform[Some mom;Some dad] |> pick
-                            match gene with
-                            | Some gene -> 
-                                let (Randomized (Some gene)) = gene
-                                Some (l, gene)
-                            | _ ->  None
-                        | (l, (mom, _)) -> 
+                        | (Some mom, Some dad) -> 
+                            let gene = uniform[Some mom;Some dad]
+                            pickGene gene
+                        | (mom, _) -> 
                             // always pick moms genes
-                            match mom with
-                            | Some m -> Some (l, m)
-                            | _ -> None)
+                            let gene = certainly mom
+                            pickGene gene)
         | (Less mom, Worthy dad) -> 
           allign mom.Chromosome.Genes dad.Chromosome.Genes
           |> List.map (fun genes -> 
                         match genes with
                         // Genes on the same locus get picked at random from the 2 parents
-                        | (l, (Some mom, Some dad)) -> 
-                            let gene = uniform[Some mom;Some dad] |> pick
-                            match gene with
-                            | Some gene -> 
-                                let (Randomized (Some gene)) = gene
-                                Some (l, gene)
-                            | _ -> None
-                        // Always pick dads genes                        
-                        | (l, (_, dad)) -> 
-                            match dad with
-                            | Some d -> Some (l, d)
-                            | _ -> None)                                                                                               
+                        | (Some mom, Some dad) -> 
+                            let gene = uniform[Some mom;Some dad]
+                            pickGene gene                        
+                        | (_, dad) -> 
+                            // Always pick dads genes
+                            let gene = certainly dad
+                            pickGene gene)                                                                                               
 
     // For every point in each Genome, where each Genome shares
     // the innovation number, the Gene is chosen randomly from
     // either parent.  If one parent has an innovation absent in
     // the other, the baby may inherit the innovation
     // if it is from the more fit parent.
-    let recombine (wortiness: Recombination.Worthiness<NetworkGene, 'TMerit>) : Recombination<NetworkGene, 'TMerit> = 
+    let recombine offspringId (wortiness: Recombination.Worthiness<Connection, 'TMerit>) : Recombination<Connection, 'TMerit> = 
         (fun (Parent mom) (Parent dad) ->
             let (mom, dad) = wortiness mom dad   
             let offspring = crossover mom dad |> List.choose id      
-            {Id = ChromosomeId 2; Genes = offspring})
+            {Id = ChromosomeId offspringId ; Genes = offspring})
+
+    let alterWeight connection weightDistribution = 
+        match weightDistribution |> pick with
+        | Some (Randomized weight) -> 
+            Ok {connection with Weight = weight }
+        | None -> Error "The distribution of weights was empty" 
+
+    let addConnection connection chromosome =
+        let genes = List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = connection; Enabled = true }] chromosome.Genes        
+        { chromosome with Genes = genes }      
+
+    let rec disable (con: Connection) (genes: Gene<Connection> list) = 
+            match genes with
+            | [] -> []
+            | x::xs when x.Allele.Id = con.Id -> { x with Enabled = false } :: (disable con xs)
+            | x::xs -> x :: disable con xs     
+
+    let addNode node connection (chromosome: Chromosome<Connection>) =
+        let incomingConnection = 
+            {
+                connection with 
+                    Id = ConnectionId Sampling.Guid
+                    Input = connection.Input
+                    Output = node
+                    Weight = 1.0                    
+            }
+        let outgoingConnection = 
+            {
+                connection with 
+                    Id = ConnectionId Sampling.Guid
+                    Input = node    
+            }
+
+        let genes = chromosome.Genes
+                        |> disable connection
+                        |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = incomingConnection; Enabled = true }]
+                        |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = outgoingConnection; Enabled = true }]   
+
+        { chromosome with Genes = genes }                                      
+                     
 
 

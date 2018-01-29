@@ -29,7 +29,7 @@ type Vector< ^a when ^a : (static member (+) : ^a -> ^a -> ^a )
                 | xs , [] -> Vector xs
                 | _, _ ->
                     List.zip u v 
-                        |> List.map (fun element -> fst element + snd element)
+                        |> List.map (fun element -> (fst element) + (snd element))
                         |> Vector
 
             static member inline (~-) (Vector v) =                

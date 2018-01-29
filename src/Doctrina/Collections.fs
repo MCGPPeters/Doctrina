@@ -24,8 +24,8 @@ namespace Doctrina.Collections
             let rec loop xs ys =
                 match (xs, ys) with
                 | x::xs, y::ys -> (x, y) :: loop xs ys
-                | [], ys -> List.zip (List.replicate ys.Length None) ys
-                | xs, [] -> List.zip xs (List.replicate xs.Length None)
+                | [], ys -> List.zip (List.replicate ys.Length LanguagePrimitives.GenericZero) ys
+                | xs, [] -> List.zip xs (List.replicate xs.Length LanguagePrimitives.GenericZero)
             loop xs ys 
 
     module Set =

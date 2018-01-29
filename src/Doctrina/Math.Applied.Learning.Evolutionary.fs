@@ -4,24 +4,28 @@ open Doctrina
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Learning
 open System.Runtime.InteropServices
+open Doctrina.Math.Applied.Probability.Sampling
+open System
+open MassTransit
 
-type GeneId = GeneId of int
+type GeneId = GeneId of Randomized<Guid>
+
+type Locus = Locus of NewId
 
 type Gene<'TGene> = {
     Id: GeneId
-    Alleles: 'TGene list
+    Locus: Locus
+    Allele: 'TGene
     Enabled: bool
 }
 
-type Locus = int
-
-type ChromosomeId = ChromosomeId of int
+type ChromosomeId = ChromosomeId of Randomized<Guid>
 
 // A Genome is the primary source of genotype information used to create
 // a phenotype.
 type Chromosome<'TGene> = {
     Id: ChromosomeId
-    Genes: (Locus * Gene<'TGene>) list
+    Genes: Gene<'TGene> list
 }
 
 // A mate is a genome that has been assigned
@@ -70,9 +74,6 @@ module Recombination =
     let rec add gene genes = 
         List.append genes [((List.length genes) + 1, gene)]
 
-    let add (gene: Gene<'a>)(chromosome: Chromosome<'a>) =
-        {chromosome with Genes = (add (gene) chromosome.Genes)}    
-
     type Worthiness<'a> =
     | Worthy of 'a
     | Less of 'a
@@ -85,14 +86,3 @@ module Recombination =
             | _ -> match mate1.Merit > mate2.Merit with
                     | true -> (Worthy mate1, Less mate2)
                     | false -> (Less mate1, Worthy mate2))
-
-
-
-module Algorithm = 
-
-    let genetic (genePool: Gene<'a> list) (populationSize: int) (stopCondition: 'b -> bool) : Distribution<Genome> = 
-
-
-// module Strategy = 
-
-// module Genetic =

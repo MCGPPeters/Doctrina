@@ -15,7 +15,13 @@ type Transition<'a> = {
     Action : Action
 }
 
-type Reward<'a> = Objective<Transition<'a>>
+module Objective = 
+
+    [<Measure>]
+    type reward
+
+    type Reward = Merit<float<reward>>
+    type Reward<'a> = Objective<Transition<'a>, Reward>
 
 type Policy<'a> = State<'a> -> Action
 
