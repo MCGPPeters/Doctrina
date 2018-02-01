@@ -7,4 +7,3 @@ module Interval =
 
     let (|Closed|_|) (lower: 'a) (upper: 'a) x =
         if x >= lower && x <= upper then Some() else None
-

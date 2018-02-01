@@ -86,3 +86,15 @@ module Recombination =
             | _ -> match mate1.Merit > mate2.Merit with
                     | true -> (Worthy mate1, Less mate2)
                     | false -> (Less mate1, Worthy mate2))
+
+module Speciation = 
+
+    type Distance<'a> = Chromosome<'a> -> Chromosome<'a> -> float
+                                                                               
+    // Speciate a population based on a distance metric by grouping
+    // members of the population by the 'nearest' species (greatest compatibility)
+    // according to the distance
+    let speciate (distance: Distance<'a>) population species =
+        population 
+            |> List.groupBy (fun v -> species |> List.minBy (distance v))
+            

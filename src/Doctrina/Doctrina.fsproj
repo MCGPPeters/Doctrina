@@ -19,6 +19,7 @@
     <Compile Include="Caching.fs" />
     <Compile Include="Math.Applied.Learning.Neural.fs" />
     <Compile Include="Math.Applied.Learning.Evolutionary.Neural.fs" />
+    <Compile Include="Script.fsx" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NewId" Version="3.0.1" />

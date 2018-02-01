@@ -32,9 +32,7 @@ module Neat =
         match gene with
         | Some gene -> 
             let (Randomized gene) = gene
-            match gene with
-            | Some g -> Some g
-            | None -> None
+            gene
         | _ -> None
     
     let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit>>) =
@@ -83,44 +81,59 @@ module Neat =
             let offspring = crossover mom dad |> List.choose id      
             {Id = ChromosomeId offspringId ; Genes = offspring})
 
-    let alterWeight connection weightDistribution = 
-        match weightDistribution |> pick with
-        | Some (Randomized weight) -> 
-            Ok {connection with Weight = weight }
-        | None -> Error "The distribution of weights was empty" 
+    module Mutation =
+        let alterWeight connection weightDistribution = 
+            match weightDistribution |> pick with
+            | Some (Randomized weight) -> 
+                Ok {connection with Weight = weight }
+            | None -> Error "The distribution of weights was empty" 
 
-    let addConnection connection chromosome =
-        let genes = List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = connection; Enabled = true }] chromosome.Genes        
-        { chromosome with Genes = genes }      
+        let addConnection connection chromosome =
+            let genes = List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = connection; Enabled = true }] chromosome.Genes        
+            { chromosome with Genes = genes }      
 
-    let rec disable (con: Connection) (genes: Gene<Connection> list) = 
-            match genes with
-            | [] -> []
-            | x::xs when x.Allele.Id = con.Id -> { x with Enabled = false } :: (disable con xs)
-            | x::xs -> x :: disable con xs     
+        let rec disable (con: Connection) (genes: Gene<Connection> list) = 
+                match genes with
+                | [] -> []
+                | x::xs when x.Allele.Id = con.Id -> { x with Enabled = false } :: (disable con xs)
+                | x::xs -> x :: disable con xs     
 
-    let addNode node connection (chromosome: Chromosome<Connection>) =
-        let incomingConnection = 
-            {
-                connection with 
-                    Id = ConnectionId Sampling.Guid
-                    Input = connection.Input
-                    Output = node
-                    Weight = 1.0                    
-            }
-        let outgoingConnection = 
-            {
-                connection with 
-                    Id = ConnectionId Sampling.Guid
-                    Input = node    
-            }
+        let addNode node connection (chromosome: Chromosome<Connection>) =
+            let incomingConnection = 
+                {
+                    connection with 
+                        Id = ConnectionId Sampling.Guid
+                        Input = connection.Input
+                        Output = node
+                        Weight = 1.0                    
+                }
+            let outgoingConnection = 
+                {
+                    connection with 
+                        Id = ConnectionId Sampling.Guid
+                        Input = node    
+                }
 
-        let genes = chromosome.Genes
-                        |> disable connection
-                        |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = incomingConnection; Enabled = true }]
-                        |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = outgoingConnection; Enabled = true }]   
+            let genes = chromosome.Genes
+                            |> disable connection
+                            |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = incomingConnection; Enabled = true }]
+                            |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = outgoingConnection; Enabled = true }]   
 
-        { chromosome with Genes = genes }                                      
+            { chromosome with Genes = genes }                                      
                      
+    module Speciation = 
 
-
+        /// I'm ignoring the difference between disjoint and excess genes
+        let distance differenceCoefficient avgWeightDifferenceCoefficient (c1: Chromosome<Connection>) (c2: Chromosome<Connection>) =
+            let (n, nDifferent, avgWeightDifference) = allign c1.Genes c2.Genes 
+                                                        |> List.fold (fun acc (gene1, gene2) -> 
+                                                                            let (n, nDifferent, avgWeightDifference) = acc
+                                                                            let n' = n+1
+                                                                            let alpha = 1.0/(float n')
+                                                                            let (nMismatched', target) = match gene1, gene2 with
+                                                                                                            | Some x, Some y -> (nDifferent, abs (x.Allele.Weight - y.Allele.Weight))
+                                                                                                            | _ -> (nDifferent + 1, avgWeightDifference)
+                                                                            let error = target - avgWeightDifference
+                                                                            let avgWeight' = avgWeightDifference + alpha * error                                                
+                                                                            (n', nMismatched', avgWeight')) (0, 0, 0.0)
+            (differenceCoefficient * (float (nDifferent / n))) * (avgWeightDifferenceCoefficient * avgWeightDifference)
