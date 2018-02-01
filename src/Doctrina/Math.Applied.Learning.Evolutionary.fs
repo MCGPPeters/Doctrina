@@ -93,8 +93,15 @@ module Speciation =
                                                                                
     // Speciate a population based on a distance metric by grouping
     // members of the population by the 'nearest' species (greatest compatibility)
-    // according to the distance
-    let speciate (distance: Distance<'a>) population species =
-        population 
-            |> List.groupBy (fun v -> species |> List.minBy (distance v))
+    // according to the distance and a threshold. If no compatible
+    // species is found, create a new one. If the treshold = 0, the number
+    // of species will remain constant
+    let rec speciate (distance: Distance<'a>) threshold population species =
+            population 
+                |> List.groupBy (fun individual -> 
+                                    let compatibleSpecies = species |> List.filter (fun x -> (distance individual x) < threshold) 
+                                    match compatibleSpecies with
+                                    | [] -> individual
+                                    | x -> List.head x)
+
             
