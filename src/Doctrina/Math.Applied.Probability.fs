@@ -26,8 +26,8 @@ type Samples<'a> = Samples of Outcome<'a> list
 type Experiment<'a> = Outcome<'a> list -> Distribution<Event<'a>>
 
 // is a function that maps an event or values of one or more variables 
-// onto a real number intuitively representing some "cost" associated with the event.
-type Objective<'a, 'TMerit when 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
+// onto a real number intuitively representing some benefit gained associated with the event.
+type Benefit<'a, 'TMerit when 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
 
 type Sample< ^a when ^a: comparison > = 
     Sample of Set<'a>

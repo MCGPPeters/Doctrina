@@ -59,13 +59,13 @@ module Objective =
     type fitness
 
     type Fitness = Merit<float<fitness>>
-    type Fitness<'TGene> = Objective<Mate<'TGene, Fitness>, Fitness>       
+    type Fitness<'TGene> = Benefit<Mate<'TGene, Fitness>, Fitness>       
 
     [<Measure>]
     type novelty
 
     type Novelty = Merit<float<novelty>>
-    type Novelty<'TGene> = Objective<Mate<'TGene, Novelty>, Novelty>
+    type Novelty<'TGene> = Benefit<Mate<'TGene, Novelty>, Novelty>
 
 module Recombination = 
 

@@ -75,11 +75,11 @@ module Neat =
     // either parent.  If one parent has an innovation absent in
     // the other, the baby may inherit the innovation
     // if it is from the more fit parent.
-    let recombine offspringId (wortiness: Recombination.Worthiness<Connection, 'TMerit>) : Recombination<Connection, 'TMerit> = 
+    let recombine (wortiness: Recombination.Worthiness<Connection, 'TMerit>) : Recombination<Connection, 'TMerit> = 
         (fun (Parent mom) (Parent dad) ->
             let (mom, dad) = wortiness mom dad   
             let offspring = crossover mom dad |> List.choose id      
-            {Id = ChromosomeId offspringId ; Genes = offspring})
+            {Id = ChromosomeId Sampling.Guid; Genes = offspring})
 
     module Mutation =
         let alterWeight connection weightDistribution = 
@@ -119,36 +119,25 @@ module Neat =
                             |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = incomingConnection; Enabled = true }]
                             |> List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = outgoingConnection; Enabled = true }]   
 
-            { chromosome with Genes = genes }                                      
+            { chromosome with Genes = genes }           
+
+    // module Benefit = 
+
+    //     let novelty: Novelty<'a> = fun event ->                                   
                      
     module Speciation = 
 
-        open Doctrina.Math.Applied.Learning.Evolutionary.Speciation
-
         /// I'm ignoring the difference between disjoint and excess genes
-        let distance differenceCoefficient avgWeightDifferenceCoefficient (c1: Chromosome<Connection>) (c2: Chromosome<Connection>) =
+        let distance differenceCoefficient averageWeightDifferenceCoefficient (c1: Chromosome<Connection>) (c2: Chromosome<Connection>) =
             let (nGenes, nDifferent, avgWeightDifference) = allign c1.Genes c2.Genes 
                                                             |> List.fold (fun acc (gene1, gene2) -> 
-                                                                                let (n, nDifferent, avgWeightDifference) = acc
+                                                                                let (n, nDifferent, averageWeightDifference) = acc
                                                                                 let n' = n+1
                                                                                 let alpha = 1.0/(float n')
                                                                                 let (nMismatched', target) = match gene1, gene2 with
                                                                                                                 | Some x, Some y -> (nDifferent, abs (x.Allele.Weight - y.Allele.Weight))
-                                                                                                                | _ -> (nDifferent + 1, avgWeightDifference)
-                                                                                let error = target - avgWeightDifference
-                                                                                let avgWeight' = avgWeightDifference + alpha * error                                                
+                                                                                                                | _ -> (nDifferent + 1, averageWeightDifference)
+                                                                                let error = target - averageWeightDifference
+                                                                                let avgWeight' = averageWeightDifference + alpha * error                                                
                                                                                 (n', nMismatched', avgWeight')) (0, 0, 0.0)
-            (differenceCoefficient * (float (nDifferent / nGenes))) * (avgWeightDifferenceCoefficient * avgWeightDifference)
-
-        // Speciate a population based on a distance metric by grouping
-        // members of the population by the 'nearest' species (greatest compatibility)
-        // according to the distance and a threshold. If no compatible
-        // species is found, create a new one. If the treshold = 0, the number
-        // of species will remain constant
-        let rec speciate (distance: Distance<'a>) threshold population species =
-                population 
-                    |> List.groupBy (fun individual -> 
-                                        let compatibleSpecies = species |> List.filter (fun x -> (distance individual x) < threshold) 
-                                        match compatibleSpecies with
-                                        | [] -> individual
-                                        | x -> List.head x)
+            (differenceCoefficient * (float (nDifferent / nGenes))) * (averageWeightDifferenceCoefficient * avgWeightDifference)

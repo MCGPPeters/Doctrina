@@ -31,6 +31,7 @@ type Node =
 | EfferentNeuron of EfferentNeuron
 | InterNeuron of InterNeuron
 | AfferentNeuron of AfferentNeuron
+| Bias of float
 
 
 type ConnectionId = ConnectionId of Randomized<Guid>

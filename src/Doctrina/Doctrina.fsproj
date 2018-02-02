@@ -14,8 +14,8 @@
     <Compile Include="Math.Pure.Algebra.Linear.fs" />
     <Compile Include="Math.Applied.Optimization.fs" />
     <Compile Include="Math.Applied.Learning.fs" />
-    <Compile Include="Math.Applied.Learning.Reinforced.fs" />
     <Compile Include="Math.Applied.Learning.Evolutionary.fs" />
+    <Compile Include="Math.Applied.Learning.Reinforced.fs" />
     <Compile Include="Caching.fs" />
     <Compile Include="Math.Applied.Learning.Neural.fs" />
     <Compile Include="Math.Applied.Learning.Evolutionary.Neural.fs" />
