@@ -78,10 +78,15 @@ module Environment =
            
         open Doctrina.Math.Applied.Probability.Sampling
 
+        let (>>=) x y = Result.bind y x
+        
         let evolve (Grid grid) position action = 
             let effect = effect action |> pick
             match effect with
-            | Some (Randomized effect) -> move grid position effect
-            | _ -> Error "" 
+            | Some (Randomized effect) -> 
+                (move grid position effect) 
+                    >>= reward 
+                    >>= fun reward -> Ok (position, reward)
+            | None -> Error "Unable to pick an action"          
 
 
