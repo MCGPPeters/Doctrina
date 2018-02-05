@@ -1,13 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Doctrina\Doctrina.fsproj" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="VectorTests.fs" />
+    <Compile Include="Environments.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="FsCheck.Xunit" Version="2.10.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
@@ -15,9 +16,4 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Doctrina\Doctrina.fsproj" />
-  </ItemGroup>
-
 </Project>

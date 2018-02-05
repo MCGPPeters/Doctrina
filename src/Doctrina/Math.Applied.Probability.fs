@@ -7,6 +7,8 @@ type Merit<'a when 'a : comparison> = Merit of 'a
 
 type Probability = float
 
+type Expectation = Expectation of float
+
 type Distribution<'a> = Distribution of ('a * Probability) list
 
 type Transition<'a> = 'a -> Distribution<'a>

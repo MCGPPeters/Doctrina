@@ -22,6 +22,7 @@
     <Compile Include="Script.fsx" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="4.0.0-beta06" />
     <PackageReference Include="NewId" Version="3.0.1" />
   </ItemGroup>
 </Project>
