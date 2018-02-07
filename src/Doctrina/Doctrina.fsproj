@@ -1,28 +1,30 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Doctrina.fs" />
-    <Compile Include="Math.Pure.Structure.Order.fs" />
-    <Compile Include="Math.Pure.Numbers.fs" />
-    <Compile Include="Math.Pure.Algebra.Structures.fs" />
-    <Compile Include="Math.Pure.Change.Calculus.fs" />
-    <Compile Include="Hyperparameter.fs" />
+    <Compile Include="Doctrina.Math.Pure.Algebra.Structure.fs" />
     <Compile Include="Collections.fs" />
-    <Compile Include="Math.Applied.Probability.fs" />
-    <Compile Include="Math.Pure.Algebra.Linear.fs" />
-    <Compile Include="Math.Applied.Optimization.fs" />
-    <Compile Include="Math.Applied.Learning.fs" />
-    <Compile Include="Math.Applied.Learning.Evolutionary.fs" />
-    <Compile Include="Math.Applied.Learning.Reinforced.fs" />
+    <Compile Include="Doctrina.fs" />
+    <Compile Include="Doctrina.Math.Pure.Structure.Order.fs" />
+    <Compile Include="Doctrina.Math.Pure.Numbers.fs" />
+    <Compile Include="Doctrina.Math.Pure.Change.Calculus.fs" />
+    <Compile Include="Hyperparameter.fs" />
+    <Compile Include="Doctrina.Math.Applied.Probability.fs" />
+    <Compile Include="Doctrina.Math.Pure.Algebra.Linear.fs" />
+    <Compile Include="Doctrina.Math.Applied.Optimization.fs" />
+    <Compile Include="Doctrina.Math.Applied.Learning.fs" />
+    <Compile Include="Doctrina.Math.Applied.Learning.Evolutionary.fs" />
+    <Compile Include="Doctrina.Math.Applied.Learning.Reinforced.fs" />
     <Compile Include="Caching.fs" />
-    <Compile Include="Math.Applied.Learning.Neural.fs" />
-    <Compile Include="Math.Applied.Learning.Evolutionary.Neural.fs" />
-    <Compile Include="Script.fsx" />
+    <Compile Include="Doctrina.Math.Applied.Learning.Neural.fs" />
+    <Compile Include="Doctrina.Math.Applied.Learning.Evolutionary.Neural.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.0.0-beta06" />
     <PackageReference Include="NewId" Version="3.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.3.3" />
   </ItemGroup>
 </Project>

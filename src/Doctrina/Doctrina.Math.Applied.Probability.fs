@@ -1,8 +1,8 @@
 namespace Doctrina.Math.Applied.Probability
 
 // A figure of merit is a quantity used to characterize the performance
-open System
-open System
+open MassTransit
+
 type Merit<'a when 'a : comparison> = Merit of 'a
 
 type Probability = float
@@ -140,7 +140,7 @@ module Sampling =
 
     type Randomized<'a> = Randomized of 'a
 
-    let Guid = Randomized (Guid.NewGuid ())
+    let Guid = Randomized (NewId.Next())
 
     let rec scan (probability: Probability) (Distribution distribution) =
         match distribution with 

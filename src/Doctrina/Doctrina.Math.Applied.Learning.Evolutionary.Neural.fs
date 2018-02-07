@@ -1,9 +1,8 @@
-namespace Math.Applied.Learning.Evolutionary.Neural
+namespace Doctrina.Math.Applied.Learning.Evolutionary.Neural
 
 open Doctrina.Math.Applied.Learning.Neural
 open Doctrina.Math.Applied.Learning.Evolutionary
 open Doctrina.Math.Applied.Probability
-open Doctrina.Collections
 open MassTransit
 
 type ConnectionGene = Gene<Connection>

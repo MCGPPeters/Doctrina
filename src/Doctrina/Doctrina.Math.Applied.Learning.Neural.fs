@@ -3,6 +3,7 @@ namespace Doctrina.Math.Applied.Learning.Neural
 open Doctrina
 open System
 open Doctrina.Math.Applied.Probability.Sampling
+open MassTransit
 
 type NodeId = NodeId of Randomized<Guid>
 
@@ -22,7 +23,6 @@ type MotorNeuron = EfferentNeuron
 // and are also called sensory neurons.
 type AfferentNeuron = {
     Id : NodeId
-
 }
 
 type SensoryNeuron = AfferentNeuron
@@ -34,7 +34,7 @@ type Node =
 | Bias of float
 
 
-type ConnectionId = ConnectionId of Randomized<Guid>
+type ConnectionId = ConnectionId of Randomized<NewId>
 
 type Connection = {
     Id: ConnectionId

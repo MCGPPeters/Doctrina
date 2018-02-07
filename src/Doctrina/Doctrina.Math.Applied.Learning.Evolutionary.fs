@@ -8,7 +8,7 @@ open Doctrina.Math.Applied.Probability.Sampling
 open System
 open MassTransit
 
-type GeneId = GeneId of Randomized<Guid>
+type GeneId = GeneId of Randomized<NewId>
 
 type Locus = Locus of NewId
 
@@ -19,7 +19,7 @@ type Gene<'TGene> = {
     Enabled: bool
 }
 
-type ChromosomeId = ChromosomeId of Randomized<Guid>
+type ChromosomeId = ChromosomeId of Randomized<NewId>
 
 // A Genome is the primary source of genotype information used to create
 // a phenotype.

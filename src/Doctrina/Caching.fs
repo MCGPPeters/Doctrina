@@ -1,6 +1,6 @@
 namespace Doctrina.Caching
 
-type Outcome = Search | Fetch
+// type Outcome = Search | Fetch
 
-type Action = Action of Outcome
+// type Action = Action of Outcome
 

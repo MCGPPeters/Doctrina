@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="VectorTests.fs" />
     <Compile Include="Environments.fs" />
+    <Compile Include="Script.fsx" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FsCheck.Xunit" Version="2.10.5" />
@@ -15,5 +16,8 @@
     <PackageReference Include="Unquote" Version="4.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.3.3" />
   </ItemGroup>
 </Project>
