@@ -69,8 +69,8 @@ module Environment =
 
         let reward position =
             match kind position with 
-            | Ok Terminal when position = Position (1, 3) -> Ok (position, Reward -1.0)
-            | Ok Terminal when position = Position (2, 3) -> Ok (position, Reward 1.0)
+            | Ok Terminal when position = Position (3, 1) -> Ok (position, Reward -1.0)
+            | Ok Terminal when position = Position (3, 2) -> Ok (position, Reward 1.0)
             | Ok _ -> Ok (position, Reward -0.04)
             | Error x -> Error x
 
@@ -95,10 +95,10 @@ module Environment =
 
             match grid |> List.contains next with
             | true -> match kind next with
-                        | Ok Terminal | Ok NonTerminal -> Ok next
-                        | Ok Obstacle -> Ok unchanged
-                        | Error e -> Error e
-            | false -> Ok unchanged                                          
+                        | Ok Terminal | Ok NonTerminal -> next
+                        | Ok Obstacle -> unchanged
+                        | Error e -> unchanged
+            | false -> unchanged                                          
            
         open Doctrina.Math.Applied.Probability.Sampling
 
@@ -108,7 +108,7 @@ module Environment =
             match effect with
             | Some (Randomized effect) -> 
                 move grid position effect 
-                    >>= reward
+                    |> reward
             | None -> Error "Unable to pick an action"
     
         let reset grid = step grid (Position (0, 0)) Stay                                

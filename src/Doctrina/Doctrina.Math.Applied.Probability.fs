@@ -7,7 +7,7 @@ type Merit<'a when 'a : comparison> = Merit of 'a
 
 type Probability = float
 
-type Expectation = Expectation of float
+type Expectation<'e> = Expectation of 'e
 
 type Distribution<'a> = Distribution of ('a * Probability) list
 

@@ -13,6 +13,8 @@ namespace Doctrina.Collections
             Seq.fold (fun s e -> monoid.Combine(s, f e)) (monoid.Zero())
     
     module List =
+
+        type NonEmpty<'a> = NonEmpty of 'a * 'a list
                                
         /// List monoid
         let monoid<'T> =

@@ -8,6 +8,7 @@ type Gamma = float
 type Epsilon = float
 
 type Reward = Reward of float
+type Return = Return of float
 
 type Action<'a> = Action of 'a
 
@@ -50,10 +51,14 @@ module Agent =
 
 module Prediction =
 
-    let return' (states: State<'s> list) reward (discount: Gamma) = 
-        states
-        |> List.mapi (fun time state -> (pown discount time) * reward(state)) 
-        |> List.sum
+    let utility (visits: (State<'s> * Reward) list) (discount: Gamma) = 
+        visits
+            |> List.mapi (fun tick (_, reward) -> 
+                            let (Reward r) = reward
+                            (pown discount tick) * r)
+            |> List.sum
+            |> Reward                    
+            |> Expectation
 
 //    let value     
 //
