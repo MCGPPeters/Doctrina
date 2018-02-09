@@ -68,7 +68,7 @@ module Computation =
               Distribution [for x in prior do
                             let  (Distribution distribution) = (likelihood (outcome x))
                             for y in distribution ->
-                               (outcome y, (probability y) * (probability x))] 
+                               (outcome y, (probability y) * (probability x))]                    
 
     ///mapD :: (a -> b) -> Dist a -> Dist b
     let inline map f (Distribution distribution) : Distribution<'b> = 

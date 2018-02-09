@@ -1,6 +1,5 @@
 namespace Doctrina.Math.Applied.Learning.Reinforced
 
-open Doctrina
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
 
@@ -37,12 +36,7 @@ type Agent<'s, 'a> = State<'s> -> Randomized<Action<'a>> option
 
 type Observation<'a> = Observation of 'a
 
-type Environment<'s, 'a> = {
-    States: State<'s> list
-    ActionSpace: Action<'a> list
-    ObservationSpace: Observation<'s>
-    TransitionDynamics: (State<'s> * Action<'a>) -> Probability * State<'s>
-}
+type Environment<'s, 'a> = (State<'s> * Action<'a>) -> Distribution<State<'s>>
 
 module Agent =
         
@@ -51,18 +45,13 @@ module Agent =
 
 module Prediction =
 
-    let utility (visits: (State<'s> * Reward) list) (discount: Gamma) = 
+    let return' (visits: (State<'s> * Reward) list) (discount: Gamma) = 
         visits
             |> List.mapi (fun tick (_, reward) -> 
                             let (Reward r) = reward
                             (pown discount tick) * r)
             |> List.sum
-            |> Reward                    
-            |> Expectation
-
-//    let value     
-//
-//    let MonteCarlo = 
+            |> Return                    
 
 module Objective = 
 
@@ -71,7 +60,3 @@ module Objective =
 
     type Reward = Merit<float<reward>>
     type Reward<'a> = Benefit<Transition<'a>, Reward>
-
-
-
-// An observation is a discrete representation of environment as perceived by the agent using its sensory system
