@@ -1,12 +1,12 @@
 namespace Doctrina.Tests
 
 open Doctrina.Math.Applied.Learning.Reinforced
+open Doctrina.Math.Applied.Probability
+open Doctrina.Collections.List
 
 module Environment =
 
     module Grid =
-
-        
 
         type X = int
         type Y = int
@@ -18,6 +18,11 @@ module Environment =
         | NonTerminal
         | Obstacle
 
+        type Tile = {
+            Position: Position
+            Kind: Kind
+        }
+
         type Move = 
         | Left
         | Right
@@ -25,37 +30,55 @@ module Environment =
         | Down
         | Stay
 
-        type Grid = Grid of Environment<Position * Kind, Move> 
+        type Grid = Environment<Tile, Move> 
 
-        let reward grid position =
-            match grid position with 
-            | Ok Terminal when position = Position (3, 1) -> Ok (position, Reward -1.0)
-            | Ok Terminal when position = Position (3, 2) -> Ok (position, Reward 1.0)
-            | Ok _ -> Ok (position, Reward -0.04)
-            | Error x -> Error x
-
-        let move grid (Position (x, y)) action =
-            let unchanged = Position (x, y)
-            let next = match action with   
-                        | Left -> Position (x - 1, y)
-                        | Right -> Position (x + 1, y)
-                        | Up -> Position (x, y + 1)
-                        | Down -> Position (x, y - 1)
-                        | Stay -> unchanged
-
-            match grid next with
-            | Ok Terminal | Ok NonTerminal -> next
-            | Ok Obstacle -> unchanged
-            | Error _ -> unchanged                                      
-           
         open Doctrina.Math.Applied.Probability.Sampling
+        let rec episode (grid: Grid) (agent: Agent<Tile, Move>) state visits =
+            let action = agent state
+            let result = match action with
+                            | Some (Randomized action) -> (grid.Dynamics (state, action))
+                            | None -> (grid.Dynamics (state, Action Stay))                 
+            match result with
+            | (Some (Randomized state)) -> 
+               let (State tile) = state
+               match tile.Kind with
+               | Terminal -> (state, grid.Reward (state, Action Stay)) :: visits |> List.rev
+               | _ -> episode grid agent (state) ((state, grid.Reward (state, Action Stay)) :: visits)
+            | None -> []
 
-        let step grid position action dynamics = 
-            let effect = dynamics action |> pick
-            match effect with
-            | Some (Randomized effect) -> 
-                move grid position effect 
-                    |> reward grid
-            | None -> Error "Unable to pick an action"
-    
-        let reset grid effect = step grid (Position (0, 0)) Stay effect                               
+        let rec utilities (visits: (State<Tile> * float) list) (discount: Gamma) (returns: Return<Tile> list) =
+            match visits with
+            | [] -> returns |> List.rev
+            | (tile, _)::xs 
+                -> match returns |> List.tryFind (fun (Return (state, _)) -> tile = state) with
+                   | None -> 
+                        match xs with
+                        | [] -> 
+                            utilities xs discount returns
+                        | _ -> let g = Prediction.return' tile (xs |> List.map snd) discount
+                               utilities xs discount ( g :: returns)
+                   | Some _ -> utilities xs discount returns           
+
+        
+                              
+
+        let rec evolve (grid: Grid) (agent: Agent<Tile, Move>) epochs remaining (discount: Gamma) (returns: Return<Tile> list) =
+            let state = State {Position = Position (0, 0); Kind = NonTerminal}    
+            let visits = episode grid agent state []
+
+            let alligned = allign (utilities visits discount []) returns (fun (Return ( _, y)) -> y)
+
+            let utilities' = alligned
+                                |> List.map (fun x -> 
+                                                match x with
+                                                | (Some (Return (state, value)), Some (Return (_, value'))) -> Return (state, value + value')
+                                                | (Some r, None) -> r
+                                                | (None, Some r) -> r)
+                                |> List.groupBy (fun (Return (state, _)) -> state)
+                                |> List.map (fun (key, values) -> (key, values |> List.sumBy (fun (Return(_, value)) -> value)))
+                                |> List.map (fun x -> Return x)                                            
+
+            match remaining = 1 with
+            | true -> utilities' 
+                        |> List.map (fun (Return (state, value)) -> Expectation (Return (state, value / float epochs)))
+            | _ -> evolve grid agent epochs (remaining - 1) discount utilities'

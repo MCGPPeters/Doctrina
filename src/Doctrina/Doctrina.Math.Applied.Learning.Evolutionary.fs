@@ -12,6 +12,7 @@ type GeneId = GeneId of Randomized<NewId>
 
 type Locus = Locus of NewId
 
+[<StructuralEquality;StructuralComparison>] 
 type Gene<'TGene> = {
     Id: GeneId
     Locus: Locus

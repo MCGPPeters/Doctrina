@@ -14,21 +14,34 @@ namespace Doctrina.Collections
     
     module List =
 
-        type NonEmpty<'a> = NonEmpty of 'a * 'a list
-                               
+        let rec allign xs ys compareBy =
+            let xs = xs |> List.sortBy compareBy
+            let ys = ys |> List.sortBy compareBy
+            match (xs, ys) with
+            | [], ys -> List.map (fun z -> (None, Some z)) ys 
+            | xs, [] -> List.map (fun z -> (None, Some z)) xs
+            | x :: xs, y :: ys -> 
+                match (x, y) with
+                | (xl, yl) when compareBy xl = compareBy yl -> (Some x, Some y) :: allign xs ys compareBy
+                | (xl, yl) when compareBy xl < compareBy yl -> (Some x, None) :: allign xs (y::ys) compareBy
+                | (xl, yl) when compareBy xl > compareBy yl -> (None, Some y) :: allign (x::xs) ys compareBy
+                | _ -> []
+                              
         /// List monoid
         let monoid<'T> =
             { new Monoid<'T list>() with
                 override this.Zero() = []
                 override this.Combine(a,b) = a @ b }
 
-        let inline zip xs ys = 
+        let inline zipZero xs ys zeroX zeroY = 
             let rec loop xs ys =
                 match (xs, ys) with
                 | x::xs, y::ys -> (x, y) :: loop xs ys
-                | [], ys -> List.zip (List.replicate ys.Length LanguagePrimitives.GenericZero) ys
-                | xs, [] -> List.zip xs (List.replicate xs.Length LanguagePrimitives.GenericZero)
+                | [], ys -> List.zip (List.replicate ys.Length zeroX) ys
+                | xs, [] -> List.zip xs (List.replicate xs.Length zeroY)
             loop xs ys 
+
+        let inline zip xs ys = zipZero xs ys LanguagePrimitives.GenericZero LanguagePrimitives.GenericZero       
 
     module Set =
         let monoid<'T when 'T : comparison> =

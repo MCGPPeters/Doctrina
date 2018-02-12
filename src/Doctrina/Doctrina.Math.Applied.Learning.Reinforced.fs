@@ -6,14 +6,18 @@ open Doctrina.Math.Applied.Probability.Sampling
 type Gamma = float
 type Epsilon = float
 
-type Reward = Reward of float
-type Return = Return of float
+type Reward = float 
 
 type Action<'a> = Action of 'a
 
 type State<'s> = State of 's
 
+type Return<'s> = Return of State<'s> * float
+
+type Utility<'s> = Utility of State<'s> * Expectation<Return<'s>>
+
 type Origin<'s> = Origin of State<'s>
+
 
 type Destination<'s> = Destination of State<'s>
 
@@ -36,7 +40,12 @@ type Agent<'s, 'a> = State<'s> -> Randomized<Action<'a>> option
 
 type Observation<'a> = Observation of 'a
 
-type Environment<'s, 'a> = (State<'s> * Action<'a>) -> Distribution<State<'s>>
+
+type Environment<'s, 'a> = {
+    Dynamics: (State<'s> * Action<'a>) -> Randomized<State<'s>> option
+    Discount: Gamma
+    Reward: (State<'s> * Action<'a>) -> Reward
+}
 
 module Agent =
         
@@ -45,13 +54,12 @@ module Agent =
 
 module Prediction =
 
-    let return' (visits: (State<'s> * Reward) list) (discount: Gamma) = 
-        visits
-            |> List.mapi (fun tick (_, reward) -> 
-                            let (Reward r) = reward
-                            (pown discount tick) * r)
-            |> List.sum
-            |> Return                    
+    let return' state (rewards: Reward list) (discount: Gamma) = 
+        let r = rewards
+                |> List.mapi (fun tick reward -> 
+                               (pown discount tick) * float reward)
+                |> List.sum
+        Return (state, r)                   
 
 module Objective = 
 

@@ -4,27 +4,29 @@ open Doctrina.Math.Applied.Learning.Neural
 open Doctrina.Math.Applied.Learning.Evolutionary
 open Doctrina.Math.Applied.Probability
 open MassTransit
+open Doctrina.Math.Applied.Learning.Evolutionary.Recombination
+open Doctrina.Math.Applied.Probability.Distribution
+open Doctrina.Math.Applied.Probability.Sampling
+open Doctrina.Collections.List
 
 type ConnectionGene = Gene<Connection>
 
 module Neat =
 
-    open Doctrina.Math.Applied.Learning.Evolutionary.Recombination
-    open Doctrina.Math.Applied.Probability.Distribution
-    open Doctrina.Math.Applied.Probability.Sampling
+   
 
-    let rec allign (xs: Gene<'TGene> list) (ys: Gene<'TGene> list) =
-        let xs = List.sortBy (fun x -> x.Locus) xs
-        let ys = List.sortBy (fun y -> y.Locus) ys
-        match (xs, ys) with
-        | x :: xs, y :: ys -> 
-            match (x, y) with
-            | (xl, yl) when xl.Locus = yl.Locus -> (Some x, Some y) :: allign xs ys
-            | (xl, yl) when xl.Locus < yl.Locus -> (Some x, None) :: allign xs (y::ys)
-            | (xl, yl) when xl.Locus > yl.Locus -> (None, Some y) :: allign (x::xs) ys
-            | _ -> []
-        | [], ys -> List.map (fun z -> (None, Some z)) ys 
-        | xs, [] -> List.map (fun z -> (None, Some z)) xs
+    // let rec allign (xs: Gene<'TGene> list) (ys: Gene<'TGene> list) =
+    //     let xs = List.sortBy (fun x -> x.Locus) xs
+    //     let ys = List.sortBy (fun y -> y.Locus) ys
+    //     match (xs, ys) with
+    //     | x :: xs, y :: ys -> 
+    //         match (x, y) with
+    //         | (xl, yl) when xl.Locus = yl.Locus -> (Some x, Some y) :: allign xs ys
+    //         | (xl, yl) when xl.Locus < yl.Locus -> (Some x, None) :: allign xs (y::ys)
+    //         | (xl, yl) when xl.Locus > yl.Locus -> (None, Some y) :: allign (x::xs) ys
+    //         | _ -> []
+    //     | [], ys -> List.map (fun z -> (None, Some z)) ys 
+    //     | xs, [] -> List.map (fun z -> (None, Some z)) xs
 
     let pickGene distribution = 
         let gene = distribution |> pick
@@ -37,7 +39,7 @@ module Neat =
     let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit>>) =
         match (mom, dad) with
         | (Worthy mom, Worthy dad) | (Less mom, Less dad) -> 
-          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          allign mom.Chromosome.Genes dad.Chromosome.Genes (fun gene -> gene.Locus)
           |> List.map (fun genePair -> 
                         match genePair with
                         // Genes on the same locus get picked at random from the 2 parents
@@ -45,7 +47,7 @@ module Neat =
                             let gene = uniform[mom; dad]
                             pickGene gene)      
         | (Worthy mom, Less dad) -> 
-          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          allign mom.Chromosome.Genes dad.Chromosome.Genes (fun gene -> gene.Locus)
           |> List.map (fun genePair -> 
                         match genePair with
                         // Genes on the same locus get picked at random from the 2 parents
@@ -57,7 +59,7 @@ module Neat =
                             let gene = certainly mom
                             pickGene gene)
         | (Less mom, Worthy dad) -> 
-          allign mom.Chromosome.Genes dad.Chromosome.Genes
+          allign mom.Chromosome.Genes dad.Chromosome.Genes (fun gene -> gene.Locus)
           |> List.map (fun genes -> 
                         match genes with
                         // Genes on the same locus get picked at random from the 2 parents
@@ -128,7 +130,7 @@ module Neat =
 
         /// I'm ignoring the difference between disjoint and excess genes
         let distance differenceCoefficient averageWeightDifferenceCoefficient (c1: Chromosome<Connection>) (c2: Chromosome<Connection>) =
-            let (nGenes, nDifferent, avgWeightDifference) = allign c1.Genes c2.Genes 
+            let (nGenes, nDifferent, avgWeightDifference) = allign c1.Genes c2.Genes (fun gene -> gene.Locus)
                                                             |> List.fold (fun acc (gene1, gene2) -> 
                                                                                 let (n, nDifferent, averageWeightDifference) = acc
                                                                                 let n' = n+1
