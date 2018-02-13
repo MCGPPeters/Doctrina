@@ -2,17 +2,23 @@ namespace Doctrina.Collections
 
     open Doctrina.Math.Pure.Structure.Algebra.Structures
 
-    module Seq =
-        let monoid<'T> =
-            { new Monoid<seq<'T>>() with
-                override this.Zero() = Seq.empty
-                override this.Combine(a,b) = Seq.append a b
-            }
+    // module Seq =
+    //     let monoid<'T> =
+    //         { new Monoid<seq<'T>>() with
+    //             override this.Zero() = Seq.empty
+    //             override this.Combine(a,b) = Seq.append a b
+    //         }
 
-        let foldMap (monoid: _ Monoid) f =
-            Seq.fold (fun s e -> monoid.Combine(s, f e)) (monoid.Zero())
+    //     let foldMap (monoid: _ Monoid) f =
+    //         Seq.fold (fun s e -> monoid.Combine(s, f e)) (monoid.Zero())
     
     module List =
+
+        let rec update original replacement list = 
+            match list with
+            | [] -> []
+            | x::xs when x = original -> replacement :: xs
+            | x::xs -> x :: update original replacement xs
 
         let rec allign xs ys compareBy =
             let xs = xs |> List.sortBy compareBy
@@ -28,10 +34,10 @@ namespace Doctrina.Collections
                 | _ -> []
                               
         /// List monoid
-        let monoid<'T> =
-            { new Monoid<'T list>() with
-                override this.Zero() = []
-                override this.Combine(a,b) = a @ b }
+        // let monoid<'T> =
+        //     { new Monoid<'T list>() with
+        //         override this.Zero() = []
+        //         override this.Combine(a,b) = a @ b }
 
         let inline zipZero xs ys zeroX zeroY = 
             let rec loop xs ys =
@@ -43,8 +49,8 @@ namespace Doctrina.Collections
 
         let inline zip xs ys = zipZero xs ys LanguagePrimitives.GenericZero LanguagePrimitives.GenericZero       
 
-    module Set =
-        let monoid<'T when 'T : comparison> =
-            { new Monoid<Set<'T>>() with
-                override this.Zero() = Set.empty
-                override this.Combine(a,b) = Set.union a b }        
+    // module Set =
+    //     let monoid<'T when 'T : comparison> =
+    //         { new Monoid<Set<'T>>() with
+    //             override this.Zero() = Set.empty
+    //             override this.Combine(a,b) = Set.union a b }        

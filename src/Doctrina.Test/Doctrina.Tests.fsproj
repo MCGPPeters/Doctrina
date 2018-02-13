@@ -20,4 +20,7 @@
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.3.3" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TemporalDifferenceLearning.fsx" />
+  </ItemGroup>
 </Project>
