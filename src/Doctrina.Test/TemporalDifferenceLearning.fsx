@@ -1,4 +1,4 @@
-#r @"C:\Users\maurice\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
+#r @"C:\Users\maurice.peters\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
 #load @"..\Doctrina\Doctrina.Math.Pure.Algebra.Structure.fs"
 #load @"..\Doctrina\Collections.fs"
 #load @"..\Doctrina\Doctrina.fs"
@@ -60,6 +60,7 @@ let grid: Grid = {
                                                                                                                 Position (x, y - 1)
                                                                                                             | Stay -> position
                                                                                                 match next with 
+                                                                                                | Position (0, 0) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (0, 1) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (0, 2) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (1, 0) -> certainly (State next, Reward -0.04, false)                                                                                     
@@ -70,7 +71,9 @@ let grid: Grid = {
                                                                                                 | Position (3, 0) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (3, 1) -> certainly (State next, Reward -1.0, true)                                                                                           
                                                                                                 | Position (3, 2) -> certainly (State next, Reward 1.0, true)                                                                                           
-                                                                                                | _ -> certainly (State position, Reward -0.04, false)) |> pick);
+                                                                                                | _ -> 
+                                                                                                    //printfn "%A" next
+                                                                                                    certainly (State position, Reward -0.04, false)) |> pick);
     Discount = 0.999
 }
 let policy : Policy<Position, Move> = 
@@ -109,5 +112,5 @@ let utilities = [
         Utility (Expectation ( Return (State (Position (3, 1)), 0.0)));
         Utility (Expectation ( Return (State (Position (3, 2)), 0.0)));
         ]
-evolve grid agent epochs alpha gamma utilities 
+evolve grid agent 1000 alpha gamma utilities 
                                                                                             
