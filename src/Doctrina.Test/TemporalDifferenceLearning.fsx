@@ -63,7 +63,8 @@ let grid: Grid = {
                                                                                                 | Position (0, 0) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (0, 1) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (0, 2) -> certainly (State next, Reward -0.04, false)
-                                                                                                | Position (1, 0) -> certainly (State next, Reward -0.04, false)                                                                                     
+                                                                                                | Position (1, 0) -> certainly (State next, Reward -0.04, false)
+                                                                                                | Position (1, 1) -> certainly (State position, Reward -0.04, false)                                                                                       
                                                                                                 | Position (1, 2) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (2, 0) -> certainly (State next, Reward -0.04, false)
                                                                                                 | Position (2, 1) -> certainly (State next, Reward -0.04, false)
@@ -112,5 +113,5 @@ let utilities = [
         Utility (Expectation ( Return (State (Position (3, 1)), 0.0)));
         Utility (Expectation ( Return (State (Position (3, 2)), 0.0)));
         ]
-evolve grid agent 1000 alpha gamma utilities 
+evolve grid agent 10000 alpha gamma utilities 
                                                                                             
