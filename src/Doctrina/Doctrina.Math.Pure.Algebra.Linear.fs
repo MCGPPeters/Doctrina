@@ -2,6 +2,10 @@ namespace Doctrina.Math.Pure.Algebra.Linear
 
 open Doctrina.Collections
 
+// type Field< ^a when ^a : (static member append : ^a -> ^a -> ^a )
+//                 and ^a : (static member (*) : ^a -> ^a -> ^a ) > =
+//                 | Field of 'a
+
 type Vector< ^a when ^a : (static member (+) : ^a -> ^a -> ^a )
                     and ^a : (static member (*) : ^a -> ^a -> ^a ) > =
         | Vector of list< ^a >

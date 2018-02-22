@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Doctrina.Math.Pure.Algebra.Structure.fs" />
+    <Compile Include="Doctrina.Collections.NonEmpty.fs" />
     <Compile Include="Collections.fs" />
     <Compile Include="Doctrina.fs" />
     <Compile Include="Doctrina.Math.Pure.Structure.Order.fs" />

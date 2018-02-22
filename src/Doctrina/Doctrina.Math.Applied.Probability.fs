@@ -2,6 +2,8 @@ namespace Doctrina.Math.Applied.Probability
 
 // A figure of merit is a quantity used to characterize the performance
 open MassTransit
+open Doctrina.Collection.NonEmpty
+open System.Collections.Generic
 
 type Merit<'a when 'a : comparison> = Merit of 'a
 
@@ -9,7 +11,7 @@ type Probability = float
 
 type Expectation<'e> = Expectation of 'e
 
-type Distribution<'a> = Distribution of ('a * Probability) list
+type Distribution<'a> = Distribution of NonEmpty<('a * Probability)>
 
 type Transition<'a> = 'a -> Distribution<'a>
 
@@ -32,15 +34,19 @@ type Sample< ^a when ^a: comparison > =
     Sample of Set<'a>
 
 module Distribution = 
-    let uniform list : Distribution<'a> =
-        let length = List.length list
-        list 
-        |>  List.map (fun e -> 
-            (e , (1.0 / float length)))
-        |> Distribution        
 
-    let impossible : Distribution<'a> = Distribution []
-    let certainly a : Distribution<'a> = Distribution [(a, 1.0)]
+    let certainly a : Distribution<'a> = Distribution (Singleton (a, 1.0))
+
+    let inline uniform list =
+        match list with
+        | Singleton x -> certainly x
+        | List (x, xs) -> 
+            let list = x::xs 
+            let length = List.length list
+            list |> List.map (fun e -> (e , (1.0 / float length))) |> NonEmpty.List
+
+
+    
 
 module Computation = 
 
@@ -53,9 +59,11 @@ module Computation =
         certainly a
 
     let join f (Distribution d) (Distribution d') : Distribution<'c> =
-            Distribution [for x in d do
-                             for y in d' ->
-                             (f (outcome x) (outcome y), (probability y) * (probability x))]
+            match d with
+            | Singleton x -> x
+            | (x::xs) -> d.ToList |> ( Distribution [for x in d do
+                                         for y in d' ->
+                                         (f (outcome x) (outcome y), (probability y) * (probability x))])
 
     let pair x y = (x, y) 
     

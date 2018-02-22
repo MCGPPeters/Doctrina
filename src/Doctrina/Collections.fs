@@ -9,9 +9,7 @@ namespace Doctrina.Collections
 
     //     let foldMap (monoid: _ Monoid) f =
     //         Seq.fold (fun s e -> monoid.Combine(s, f e)) (monoid.Zero())
-    
-    type NonEmpty<'a> = NonEmpty of 'a * 'a list
-    
+   
     module List =
 
         let rec findFirst predicate list =
