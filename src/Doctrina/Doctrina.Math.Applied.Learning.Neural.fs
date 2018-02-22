@@ -44,7 +44,6 @@ type Connection = {
 }
 
 module Connection = 
-    open Doctrina.Math.Applied.Probability.Sampling
 
     let create id input output weightDistrubution = 
         match weightDistrubution |> pick with

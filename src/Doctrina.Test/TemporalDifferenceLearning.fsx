@@ -78,23 +78,23 @@ let grid: Grid = {
     Discount = 0.999
 }
 let policy : Policy<Position, Move> = 
-    fun (State position) ->
-        match position with
-        | Position (0, 0) -> certainly (Action Up)
-        | Position (0, 1) -> certainly (Action Up)
-        | Position (0, 2) -> certainly (Action Right)
-        | Position (1, 0) -> certainly (Action Left)
-        | Position (1, 1) -> certainly (Action Up)
-        | Position (1, 2) -> certainly (Action Right)
-        | Position (2, 0) -> certainly (Action Left)
-        | Position (2, 1) -> certainly (Action Up)
-        | Position (2, 2) -> certainly (Action Right)
-        | Position (3, 0) -> certainly (Action Left)
-        | Position (3, 1) -> certainly (Action Stay)
-        | Position (3, 2) -> certainly (Action Stay)
-        | _ -> impossible
+    Policy(fun (State position) ->
+                match position with
+                | Position (0, 0) -> certainly (Action Up)
+                | Position (0, 1) -> certainly (Action Up)
+                | Position (0, 2) -> certainly (Action Right)
+                | Position (1, 0) -> certainly (Action Left)
+                | Position (1, 1) -> certainly (Action Up)
+                | Position (1, 2) -> certainly (Action Right)
+                | Position (2, 0) -> certainly (Action Left)
+                | Position (2, 1) -> certainly (Action Up)
+                | Position (2, 2) -> certainly (Action Right)
+                | Position (3, 0) -> certainly (Action Left)
+                | Position (3, 1) -> certainly (Action Stay)
+                | Position (3, 2) -> certainly (Action Stay)
+                | _ -> impossible)
 
-let agent = Agent.create policy pick
+let agent = Agent.create policy (pick >> (fun (Randomized(Some(Action action))) -> action) |> Decision)
 let alpha = 0.1
 let epochs = 5000
 let gamma = 0.999
