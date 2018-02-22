@@ -1,4 +1,4 @@
-#r @"C:\Users\maurice.peters\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
+#r @"C:\Users\maurice\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
 #load @"..\Doctrina\Doctrina.Math.Pure.Algebra.Structure.fs"
 #load @"..\Doctrina\Collections.fs"
 #load @"..\Doctrina\Doctrina.fs"
@@ -94,7 +94,7 @@ let policy : Policy<Position, Move> =
                 | Position (3, 2) -> certainly (Action Stay)
                 | _ -> impossible)
 
-let agent = Agent.create policy (pick >> (fun (Randomized(Some(Action action))) -> action) |> Decision)
+let agent = Agent.create policy (pick >> (fun (Randomized(Some(Action action))) -> Action action) |> Decision)
 let alpha = 0.1
 let epochs = 5000
 let gamma = 0.999

@@ -46,7 +46,7 @@ type Observation<'a> = Observation of 'a
 
 
 type Environment<'s, 'a> = {
-    Dynamics: (State<'s> * Action<'a>) -> Randomized<State<'s> * Reward * bool> option
+    Dynamics: (State<'s> * Action<'a>) -> Randomized<(State<'s> * Reward * bool) option>
     Discount: Gamma
 }
 
@@ -87,12 +87,12 @@ module Prediction =
 
             let action = agent state   
             match environment.Dynamics (state, action) with
-            | Some (Randomized (next, reward, final)) ->
+            | Randomized(Some (next, reward, final)) ->
                 let utilities = update utilities state (next, reward) learningRate discount
                 match final with
                 | true -> utilities
                 | false -> episode environment agent next utilities learningRate discount 
-            | None -> utilities       
+            | Randomized None -> utilities       
 
     
 module Control =
