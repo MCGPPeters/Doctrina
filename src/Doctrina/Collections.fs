@@ -1,7 +1,5 @@
 namespace Doctrina.Collections
 
-    open Doctrina.Math.Pure.Structure.Algebra.Structures
-
     // module Seq =
     //     let monoid<'T> =
     //         { new Monoid<seq<'T>>() with
@@ -13,6 +11,12 @@ namespace Doctrina.Collections
     //         Seq.fold (fun s e -> monoid.Combine(s, f e)) (monoid.Zero())
     
     module List =
+
+        let rec findFirst predicate list =
+            match list with
+            | [] -> []
+            | x::_ when predicate x -> [x]
+            | _::xs -> findFirst predicate xs
 
         let rec update original replacement list = 
             match list with

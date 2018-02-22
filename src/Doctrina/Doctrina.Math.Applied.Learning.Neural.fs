@@ -44,18 +44,17 @@ type Connection = {
 }
 
 module Connection = 
-    open Doctrina.Math.Applied.Probability.Sampling
 
     let create id input output weightDistrubution = 
         match weightDistrubution |> pick with
-        | Some (Randomized weight) -> 
+        | (Randomized (Some weight)) -> 
             Ok {
                 Id = (ConnectionId id)
                 Input = input
                 Output = output
                 Weight = weight
             }
-        | None -> Error "The distibution of wieghts was empty"        
+        | Randomized None -> Error "The distribution of weights was empty"        
 
 type NetworkId = NetworkId of int
 
