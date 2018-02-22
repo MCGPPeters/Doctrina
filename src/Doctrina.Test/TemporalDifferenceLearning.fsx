@@ -20,7 +20,7 @@
 
 open Doctrina.Tests.Environment.Grid
 open Doctrina.Math.Applied.Learning.Reinforced
-open Doctrina.Math.Applied.Learning.Reinforced.Prediction
+open Doctrina.Math.Applied.Learning.Reinforced.Prediction.TD0
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Math.Applied.Probability.Distribution
@@ -113,5 +113,5 @@ let utilities = [
         Utility (Expectation ( Return (State (Position (3, 1)), 0.0)));
         Utility (Expectation ( Return (State (Position (3, 2)), 0.0)));
         ]
-evolve grid agent 10000 alpha gamma utilities 
+evolve grid agent 100000 alpha gamma utilities 
                                                                                             

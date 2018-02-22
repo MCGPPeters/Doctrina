@@ -31,8 +31,7 @@ module Neat =
     let pickGene distribution = 
         let gene = distribution |> pick
         match gene with
-        | Some gene -> 
-            let (Randomized gene) = gene
+        | Randomized(Some gene) -> 
             gene
         | _ -> None
     
@@ -85,9 +84,9 @@ module Neat =
     module Mutation =
         let alterWeight connection weightDistribution = 
             match weightDistribution |> pick with
-            | Some (Randomized weight) -> 
+            | Randomized (Some weight) -> 
                 Ok {connection with Weight = weight }
-            | None -> Error "The distribution of weights was empty" 
+            | Randomized None -> Error "The distribution of weights was empty" 
 
         let addConnection connection chromosome =
             let genes = List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = connection; Enabled = true }] chromosome.Genes        

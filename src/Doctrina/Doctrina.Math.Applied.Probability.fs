@@ -19,9 +19,6 @@ type Spread<'a> = 'a list -> Distribution<'a>
 
 type Outcome<'a> = Outcome of 'a
 
-// An event is a characterization of a list of outcomes, like "head occured within two coin flips" => 
-type Event<'a> = Outcome<'a> list
-
 // a sample space which is the set of all possible outcomes. I
 type Samples<'a> = Samples of Outcome<'a> list
 
@@ -147,7 +144,7 @@ module Sampling =
         | [] -> None 
         | (x, probability')::xs -> 
                 match (probability <= probability') || xs = List.empty with
-                | true -> Some (Randomized x)
+                | true -> Some x
                 | _ -> scan (probability - probability') (Distribution xs) 
 
     let inline select distribution probability = 
@@ -155,6 +152,6 @@ module Sampling =
 
     let pick distribution = 
         let r = System.Random()
-        select distribution (r.NextDouble())
+        Randomized(select distribution (r.NextDouble()))
 
     let random t = t >> pick    
