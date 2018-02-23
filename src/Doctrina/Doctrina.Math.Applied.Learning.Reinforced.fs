@@ -4,6 +4,7 @@ open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Collections.List
 open Doctrina.Math.Applied.Probability.Computation
+open Doctrina.Math.Applied.Probability.Distribution
 
 type Gamma = float
 type Epsilon = float
@@ -11,7 +12,11 @@ type Alpha = float
 
 type Reward = Reward of float 
 
-type Action<'a> = Action of 'a
+type Action<'a> = 
+    | Action of 'a
+    | Idle
+    with
+        static member inline Zero = Idle
 
 type State<'s> = State of 's
 
@@ -33,12 +38,9 @@ type Transition<'s, 'a> = {
 
 type Policy<'s, 'a> = Policy of (State<'s> -> Distribution<Action<'a>>)
 
-// The 
-type Decision<'a> = Decision of (Distribution<Action<'a>> -> Action<'a>)
+//type Episode<'s, 'a> = Experiment<Policy<'s, 'a>>
 
-type Episode<'s, 'a> = Experiment<Policy<'s, 'a>>
-
-type Experience<'a> = Experience of Transition<'a> list
+//type Experience< ^a> = Experience of Transition<'a> list
 
 type Agent<'s, 'a> = State<'s> -> Action<'a>
 
@@ -52,8 +54,9 @@ type Environment<'s, 'a> = {
 
 module Agent =
         
-    let create (Policy policy) (Decision decision) : Agent<'s, 'a> =
-        policy >> decision
+    let inline create< ^s, ^a  when ^a : (static member Zero : 'a) > (policy: Policy<'s, 'a>) decide : Agent<'s, 'a> =
+        let (Policy policy) = policy
+        policy >> decide
 
 module Prediction =
 
@@ -97,6 +100,8 @@ module Prediction =
     
 module Control =
 
+    let greedy distribution = distribution |> argMax
+
     module Sarsa =
 
         let update<'s, 'a when 's : equality and 'a : equality> (actionValues: Q<'s, 'a> list) (current: State<'s> * Action<'a>) (observation: ((State<'s> * Action<'a>) * Reward)) (learningRate: Alpha) (discount: Gamma) =
@@ -109,7 +114,34 @@ module Control =
                                                                 let currentReturn' = Q ( Expectation( Return (current, currentReturn + learningRate * (reward + discount * (nextReturn - currentReturn)))))
                                                                 Doctrina.Collections.List.update (Q ( Expectation( Return (current, currentReturn)))) currentReturn' actionValues))
 
-        let greedy (actionDistribution: Distribution<Action<'a>> ) = actionDistribution |> (argMax >> fst)
+        type Position = Position of int * int
+
+        type Move = 
+        | Left
+        | Right
+        | Up
+        | Down
+
+        let policy: Policy<Position, Move> = 
+            Policy(fun (State position) ->
+                        match position with
+                        | Position (0, 0) -> certainly (Action Up)
+                        | Position (0, 1) -> certainly (Action Up)
+                        | Position (0, 2) -> certainly (Action Right)
+                        | Position (1, 0) -> certainly (Action Left)
+                        | Position (1, 1) -> certainly (Action Up)
+                        | Position (1, 2) -> certainly (Action Right)
+                        | Position (2, 0) -> certainly (Action Left)
+                        | Position (2, 1) -> certainly (Action Up)
+                        | Position (2, 2) -> certainly (Action Right)
+                        | Position (3, 0) -> certainly (Action Left)
+                        | Position (3, 1) -> certainly (Action Idle)
+                        | Position (3, 2) -> certainly (Action Idle)
+                        | _ -> certainly Idle)
+
+        let agent = Agent.create policy (fun x -> 
+                                    let (Randomized action) = x |> pick
+                                    action)
 
         // let rec episode<'s, 'a when 's: equality and 'a: equality> (environment: Environment<'s, 'a>) (observation: ((State<'s> * Action<'a>) * Reward)) policy actionValues learningRate discount =
 

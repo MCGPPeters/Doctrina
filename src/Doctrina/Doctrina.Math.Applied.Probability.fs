@@ -2,8 +2,7 @@ namespace Doctrina.Math.Applied.Probability
 
 // A figure of merit is a quantity used to characterize the performance
 open MassTransit
-open Doctrina.Collection.NonEmpty
-open Doctrina.Collection.NonEmpty.NonEmpty
+open Doctrina.Collections.NonEmpty
 
 type Merit<'a when 'a : comparison> = Merit of 'a
 
@@ -53,9 +52,6 @@ module Distribution =
 module Computation = 
 
     open Distribution
-
-    let outcome = fst
-    let probability = snd
 
     let inline return' a : Distribution<'a> =   
         certainly a
@@ -111,7 +107,7 @@ module Computation =
        matches |> NonEmpty.sumBy id                                
 
     let inline argMax (Distribution distribution) =
-        distribution |> NonEmpty.maxBy (fun (Event(_,p)) -> p)
+        distribution |> NonEmpty.maxBy (fun (Event(x,_)) -> x)
 
     let inline (>>=) a b = bind a b
 

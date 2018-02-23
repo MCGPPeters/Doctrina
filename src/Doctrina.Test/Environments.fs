@@ -16,6 +16,5 @@ module Environment =
         | Right
         | Up
         | Down
-        | Stay
 
         type Grid = Environment<Position, Move> 

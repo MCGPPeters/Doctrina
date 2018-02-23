@@ -1,4 +1,4 @@
-namespace Doctrina.Collection.NonEmpty
+namespace Doctrina.Collections.NonEmpty
 
 type NonEmpty<'a> = 
         | Singleton of 'a
