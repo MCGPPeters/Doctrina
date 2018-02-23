@@ -3,7 +3,6 @@ namespace Doctrina.Math.Applied.Probability
 // A figure of merit is a quantity used to characterize the performance
 open MassTransit
 open Doctrina.Collection.NonEmpty
-open System.Collections.Generic
 
 type Merit<'a when 'a : comparison> = Merit of 'a
 
@@ -11,7 +10,9 @@ type Probability = float
 
 type Expectation<'e> = Expectation of 'e
 
-type Distribution<'a> = Distribution of NonEmpty<('a * Probability)>
+type Event<'a> = Event of 'a * Probability
+
+type Distribution<'a> = Distribution of NonEmpty<Event<'a>>
 
 type Transition<'a> = 'a -> Distribution<'a>
 
@@ -35,15 +36,16 @@ type Sample< ^a when ^a: comparison > =
 
 module Distribution = 
 
-    let certainly a : Distribution<'a> = Distribution (Singleton (a, 1.0))
+    let certainly a : Distribution<'a> = Distribution (Singleton (Event (a, 1.0)))
 
     let inline uniform list =
         match list with
         | Singleton x -> certainly x
         | List (x, xs) -> 
-            let list = x::xs 
+            let list = x::xs
             let length = List.length list
-            list |> List.map (fun e -> (e , (1.0 / float length))) |> NonEmpty.List
+            let values = list |> List.map (fun e -> Event (e , (1.0 / float length)))
+            Distribution (NonEmpty.List (List.head values, List.tail values))
 
 
     
@@ -58,12 +60,23 @@ module Computation =
     let inline return' a : Distribution<'a> =   
         certainly a
 
-    let join f (Distribution d) (Distribution d') : Distribution<'c> =
-            match d with
-            | Singleton x -> x
-            | (x::xs) -> d.ToList |> ( Distribution [for x in d do
-                                         for y in d' ->
-                                         (f (outcome x) (outcome y), (probability y) * (probability x))])
+    let inline join f (Distribution d) (Distribution d') : Distribution<'c> =
+        // nonEmpty {
+        //     let! 
+        // }
+
+        List.
+        match d with
+        | Singleton (Event (x, _)) -> 
+            match 'd with
+            | certainly x
+        | List (x, xs) -> 
+            let list = x::xs
+            let length = List.length list
+            let values = list |>  ( [for (x, p) in d do
+                                     for (y, q) in d' ->
+                                     Event (f x y, p * q)])
+            Distribution (NonEmpty.List (List.head values, List.tail values))                             
 
     let pair x y = (x, y) 
     
