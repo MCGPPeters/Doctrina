@@ -3,6 +3,7 @@ namespace Doctrina.Math.Applied.Probability
 // A figure of merit is a quantity used to characterize the performance
 open MassTransit
 open Doctrina.Collection.NonEmpty
+open Doctrina.Collection.NonEmpty.NonEmpty
 
 type Merit<'a when 'a : comparison> = Merit of 'a
 
@@ -10,45 +11,44 @@ type Probability = float
 
 type Expectation<'e> = Expectation of 'e
 
-type Event<'a> = Event of 'a * Probability
+type Event< ^a  when ^a : (static member Zero : 'a) > = Event of 'a * Probability
+    with
+        static member inline Zero = Event(LanguagePrimitives.GenericZero< 'a >, 0.0)
 
-type Distribution<'a> = Distribution of NonEmpty<Event<'a>>
+type Distribution< ^a when ^a : (static member Zero : 'a)> = Distribution of NonEmpty<Event<'a>>
 
-type Transition<'a> = 'a -> Distribution<'a>
+type Transition< ^a when ^a : (static member Zero : 'a)> = 'a -> Distribution<'a>
 
-type Probabilistic<'a, 'b> = 'a -> Distribution<'b>
-
-type Spread<'a> = 'a list -> Distribution<'a>
-
-type Outcome<'a> = Outcome of 'a
+type Spread< ^a when ^a : (static member Zero : 'a)> = 'a list -> Distribution<'a>
 
 // a sample space which is the set of all possible outcomes. I
-type Samples<'a> = Samples of Outcome<'a> list
+type Samples<'a> = Samples of 'a list
 
-type Experiment<'a> = Outcome<'a> list -> Distribution<Event<'a>>
+type Experiment< ^a when ^a : (static member Zero : 'a)> = 'a list -> Distribution<'a>
 
 // is a function that maps an event or values of one or more variables 
 // onto a real number intuitively representing some benefit gained associated with the event.
-type Benefit<'a, 'TMerit when 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
+type Benefit< ^a, 'TMerit when ^a : (static member Zero : 'a) and 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
 
 type Sample< ^a when ^a: comparison > = 
     Sample of Set<'a>
 
+module Event =
+    let inline combine< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (f: 'a -> 'a -> 'b) (Event (x, p)) (Event (y, q)) : Event<'b> =
+        Event (f x y, p * q)
+
+    let inline bind< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (Event (x, p)) (f: 'a -> Event<'b>) : Event<'b> =
+        let y = f x
+        let (Event( y', q)) = y
+        Event (y', q * p)
+
 module Distribution = 
 
-    let certainly a : Distribution<'a> = Distribution (Singleton (Event (a, 1.0)))
+    let inline certainly a = Distribution (Singleton (Event (a, 1.0)))
 
     let inline uniform list =
-        match list with
-        | Singleton x -> certainly x
-        | List (x, xs) -> 
-            let list = x::xs
-            let length = List.length list
-            let values = list |> List.map (fun e -> Event (e , (1.0 / float length)))
-            Distribution (NonEmpty.List (List.head values, List.tail values))
-
-
-    
+        let length = NonEmpty.length list 
+        list |> NonEmpty.map (fun e -> Event (e , (1.0 / float length))) |> Distribution
 
 module Computation = 
 
@@ -60,99 +60,67 @@ module Computation =
     let inline return' a : Distribution<'a> =   
         certainly a
 
-    let inline join f (Distribution d) (Distribution d') : Distribution<'c> =
-        // nonEmpty {
-        //     let! 
-        // }
-
-        List.
-        match d with
-        | Singleton (Event (x, _)) -> 
-            match 'd with
-            | certainly x
-        | List (x, xs) -> 
-            let list = x::xs
-            let length = List.length list
-            let values = list |>  ( [for (x, p) in d do
-                                     for (y, q) in d' ->
-                                     Event (f x y, p * q)])
-            Distribution (NonEmpty.List (List.head values, List.tail values))                             
+    let inline combine f (Distribution d) (Distribution d') : Distribution<'b> =
+        Distribution (NonEmpty.combine (Event.combine f) d d')                             
 
     let pair x y = (x, y) 
     
 
     // https://queue.acm.org/detail.cfm?id=3055303
-    let inline bind (Distribution prior) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
-              Distribution [for x in prior do
-                            let  (Distribution distribution) = (likelihood (outcome x))
-                            for y in distribution ->
-                               (outcome y, (probability y) * (probability x))]                    
+    let inline bind< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
+        
+        let x = nonEmpty {
+            let (Distribution prior') =  prior
+            for Event (x, p) in prior' do
+            let  (Distribution posterior) = likelihood x
+            for Event (y, q) in posterior do
+            return Event (y, q * p)
+        }
+
+        Distribution x                  
 
     ///mapD :: (a -> b) -> Dist a -> Dist b
-    let inline map f (Distribution distribution) : Distribution<'b> = 
-             Distribution [for x in distribution do
-                              for y in f (outcome x) -> 
-                              (y, probability x)]    
+    let inline map (f: 'a -> 'b) (Distribution distribution) : Distribution<'b> = 
+    
+        let events = nonEmpty {
+            for Event (x, p) in distribution do
+            for y in Singleton (f x) do 
+            return Event (y, p)
+        }
 
-    let inline apply (Distribution fDistribution) (Distribution distribution) : Distribution<'b> = 
-             Distribution [for x in distribution do
-                              for f in fDistribution do 
-                              for y in (fst f) (outcome x) ->
-                              (y, probability x)]                   
+        Distribution events   
+
+    // let inline apply (Distribution fDistribution) (Distribution distribution) : Distribution<'b> = 
+    //     let events = nonEmpty {
+    //         for Event (x, p) in distribution do
+    //         for Event (f, _) in fDistribution do
+    //         for y in Singleton (f x) do 
+    //         return Event (y, p)
+    //     }
+
+    //     Distribution events
+                  
 
     let inline filter (Distribution distribution) predicate : Distribution<'a> =
-       distribution 
-       |> List.filter predicate
-       |> Distribution
+       distribution |> NonEmpty.filter predicate |> Distribution
 
-    let inline (?) (predicate: 'a -> bool) (Distribution distribution) : Probability =
-       distribution 
-       |> List.filter (fun x -> predicate (fst x))
-       |> List.sumBy snd
+    let inline (?) (predicate: Event<'a> -> bool) (Distribution distribution) : Probability =
+       let matches = distribution 
+                    |> NonEmpty.filter predicate 
+                    |> NonEmpty.map (fun (Event(_,p)) -> p)
+       matches |> NonEmpty.sumBy id                                
 
     let inline argMax (Distribution distribution) =
-        distribution |> List.maxBy (fun x -> probability x)
-        // can be rewriten using eta reduction as => distribution |> Seq.maxBy snd |> fst
-
+        distribution |> NonEmpty.maxBy (fun (Event(_,p)) -> p)
 
     let inline (>>=) a b = bind a b
 
     type DistributionMonadBuilder() =
-        member this.Bind (r, f) = bind r f
-        member this.Return x = return' x
-        member this.ReturnFrom m = m
+        member inline __.Bind (r, f) = bind r f
+        member inline __.Return x = return' x
+        member __.ReturnFrom m = m
 
     let probabilistic = DistributionMonadBuilder()
-
-module Collections =
-
-    open Computation
-    open Distribution
-    let selectOne collection = uniform [ for v in collection -> (v, List.filter (fun x -> x <> v) collection)]
-
-    let rec selectMany n collection = 
-        match n with
-        | 0 -> return' ([], collection)
-        | _ -> probabilistic {
-                    let! (c1, x) = selectOne collection
-                    let! (c2, xs) = selectMany (n - 1) x
-                    return ((c1::c2), xs) }
-
-    let inline select (n: int) = (selectMany n) >> map (fst >> List.rev)
-
-    type Die = int
-
-    let die = uniform [1..6]
-
-    let rec dice numberOfThrows : Distribution<Die list> = 
-        match numberOfThrows with
-        | 0 -> certainly []
-        | _ -> join (fun x y -> x :: y) (die) (dice (numberOfThrows - 1)) 
-    
-    // What is the probability of throwing 2 sixes with 2 dice
-    let twoSixes = (fun x -> x = [6;6]) ? (dice 2)
-
-    let gt3 = (fun x -> x > 3) ? (die);;
 
 module Sampling = 
 
@@ -160,19 +128,21 @@ module Sampling =
 
     let Guid = Randomized (NewId.Next())
 
-    let rec scan (probability: Probability) (Distribution distribution) =
+    let rec inline scan (probability: Probability) (Distribution distribution) =
         match distribution with 
-        | [] -> None 
-        | (x, probability')::xs -> 
-                match (probability <= probability') || xs = List.empty with
-                | true -> Some x
-                | _ -> scan (probability - probability') (Distribution xs) 
+        | (Singleton (Event (x, _))) -> x 
+        | List (Event (x, probability'), y::ys) -> 
+                match (probability <= probability') || y::ys = List.empty with
+                | true -> x
+                | _ -> scan (probability - probability') (Distribution (List(y, ys)))
+        | List (Event (x, _), []) -> x
+                    
 
     let inline select distribution probability = 
         scan probability distribution
 
-    let pick distribution = 
+    let inline pick distribution = 
         let r = System.Random()
         Randomized(select distribution (r.NextDouble()))
 
-    let random t = t >> pick    
+    let inline random t = t >> pick    
