@@ -60,12 +60,23 @@ module Computation =
     let inline return' a : Distribution<'a> =   
         certainly a
 
-    let join f (Distribution d) (Distribution d') : Distribution<'c> =
-            match d with
-            | Singleton x -> x
-            | (x::xs) -> d.ToList |> ( Distribution [for x in d do
-                                         for y in d' ->
-                                         (f (outcome x) (outcome y), (probability y) * (probability x))])
+    let inline join f (Distribution d) (Distribution d') : Distribution<'c> =
+        // nonEmpty {
+        //     let! 
+        // }
+
+        List.
+        match d with
+        | Singleton (Event (x, _)) -> 
+            match 'd with
+            | certainly x
+        | List (x, xs) -> 
+            let list = x::xs
+            let length = List.length list
+            let values = list |>  ( [for (x, p) in d do
+                                     for (y, q) in d' ->
+                                     Event (f x y, p * q)])
+            Distribution (NonEmpty.List (List.head values, List.tail values))                             
 
     let pair x y = (x, y) 
     
