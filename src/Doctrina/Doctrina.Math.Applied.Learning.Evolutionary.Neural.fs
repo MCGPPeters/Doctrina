@@ -8,32 +8,12 @@ open Doctrina.Math.Applied.Learning.Evolutionary.Recombination
 open Doctrina.Math.Applied.Probability.Distribution
 open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Collections.List
+open Doctrina.Collections.NonEmpty
+open Doctrina.Collections
 
 type ConnectionGene = Gene<Connection>
 
 module Neat =
-
-   
-
-    // let rec allign (xs: Gene<'TGene> list) (ys: Gene<'TGene> list) =
-    //     let xs = List.sortBy (fun x -> x.Locus) xs
-    //     let ys = List.sortBy (fun y -> y.Locus) ys
-    //     match (xs, ys) with
-    //     | x :: xs, y :: ys -> 
-    //         match (x, y) with
-    //         | (xl, yl) when xl.Locus = yl.Locus -> (Some x, Some y) :: allign xs ys
-    //         | (xl, yl) when xl.Locus < yl.Locus -> (Some x, None) :: allign xs (y::ys)
-    //         | (xl, yl) when xl.Locus > yl.Locus -> (None, Some y) :: allign (x::xs) ys
-    //         | _ -> []
-    //     | [], ys -> List.map (fun z -> (None, Some z)) ys 
-    //     | xs, [] -> List.map (fun z -> (None, Some z)) xs
-
-    let pickGene distribution = 
-        let gene = distribution |> pick
-        match gene with
-        | Randomized(Some gene) -> 
-            gene
-        | _ -> None
     
     let crossover (mom:  Worthiness<Mate<'TGene, 'TMerit> >) (dad: Worthiness<Mate<'TGene, 'TMerit>>) =
         match (mom, dad) with
@@ -42,33 +22,28 @@ module Neat =
           |> List.map (fun genePair -> 
                         match genePair with
                         // Genes on the same locus get picked at random from the 2 parents
-                        | (mom, dad) -> 
-                            let gene = uniform[mom; dad]
-                            pickGene gene)      
+                        | (Some mom, Some dad) -> 
+                            let (Randomized mate) = uniform(List(mom, [dad])) |> pick
+                            Some mate
+                        | (_, dad) -> dad)                         
         | (Worthy mom, Less dad) -> 
           allign mom.Chromosome.Genes dad.Chromosome.Genes (fun gene -> gene.Locus)
           |> List.map (fun genePair -> 
-                        match genePair with
-                        // Genes on the same locus get picked at random from the 2 parents
-                        | (Some mom, Some dad) -> 
-                            let gene = uniform[Some mom;Some dad]
-                            pickGene gene
-                        | (mom, _) -> 
-                            // always pick moms genes
-                            let gene = certainly mom
-                            pickGene gene)
+                            match genePair with
+                            // Genes on the same locus get picked at random from the 2 parents
+                            | (Some mom, Some dad) -> 
+                                let (Randomized mate) = uniform(List(mom, [dad])) |> pick
+                                Some mate
+                            | (mom, _) -> mom)
         | (Less mom, Worthy dad) -> 
           allign mom.Chromosome.Genes dad.Chromosome.Genes (fun gene -> gene.Locus)
           |> List.map (fun genes -> 
-                        match genes with
-                        // Genes on the same locus get picked at random from the 2 parents
-                        | (Some mom, Some dad) -> 
-                            let gene = uniform[Some mom;Some dad]
-                            pickGene gene                        
-                        | (_, dad) -> 
-                            // Always pick dads genes
-                            let gene = certainly dad
-                            pickGene gene)                                                                                               
+                            match genes with
+                            // Genes on the same locus get picked at random from the 2 parents
+                            | (Some mom, Some dad) -> 
+                                let (Randomized mate) = uniform(List(mom, [dad])) |> pick
+                                Some mate                        
+                            | (_, dad) -> dad)                                                                                               
 
     // For every point in each Genome, where each Genome shares
     // the innovation number, the Gene is chosen randomly from
@@ -83,10 +58,8 @@ module Neat =
 
     module Mutation =
         let alterWeight connection weightDistribution = 
-            match weightDistribution |> pick with
-            | Randomized (Some weight) -> 
-                Ok {connection with Weight = weight }
-            | Randomized None -> Error "The distribution of weights was empty" 
+            let (Randomized weight) = weightDistribution |> pick
+            {connection with Weight = weight}
 
         let addConnection connection chromosome =
             let genes = List.append [{ Locus = Locus (NewId.Next()); Id = GeneId Sampling.Guid; Allele = connection; Enabled = true }] chromosome.Genes        

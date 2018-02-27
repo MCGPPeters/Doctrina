@@ -1,4 +1,4 @@
-namespace Doctrina.Collections.NonEmpty
+namespace Doctrina.Collections
 
 type NonEmpty<'a> = 
         | Singleton of 'a
@@ -10,6 +10,16 @@ module NonEmpty =
         match x with
         | Singleton x -> [x]
         | List (head, tail) -> head :: tail
+
+    let head x = 
+        match x with
+        | Singleton x -> x
+        | List (head, _) -> head   
+
+    let tail x = 
+        match x with
+        | Singleton x -> [x]
+        | List (_, tail) -> tail      
 
     let create x xs = List(x, xs)
 
@@ -68,13 +78,13 @@ module NonEmpty =
                 acc <- f.Invoke(acc, x')
             acc
 
-    let inline sumBy (projection: 'a -> 'b) (list: NonEmpty<'a>) =
-        list |> map projection |> fold (+) LanguagePrimitives.GenericZero<'a>
+    let inline sumBy (projection: 'a -> 'b) (list: NonEmpty<_>) =
+        list |> map projection |> fold (+) (list |> head)   
 
     let inline sum (list: NonEmpty<'a>) = sumBy id list    
 
-    let inline maxBy (projection: 'a -> 'b) (list: NonEmpty<'a>) =
-        list |> map projection |> fold (fun x y -> if x > y then x else y) LanguagePrimitives.GenericZero<'b>  
+    let inline maxBy (projection) (list: NonEmpty<_>) =
+        list |> fold (fun x y -> if projection x > projection y then x else y) (list |> head)  
 
     let inline max (list: NonEmpty<'a>) = maxBy id list        
    

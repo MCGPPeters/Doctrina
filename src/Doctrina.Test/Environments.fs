@@ -16,5 +16,9 @@ module Environment =
         | Right
         | Up
         | Down
+        | Idle
+        // with
+        //     static member inline Zero = Idle
+
 
         type Grid = Environment<Position, Move> 

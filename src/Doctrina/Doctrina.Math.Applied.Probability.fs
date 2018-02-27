@@ -2,6 +2,7 @@ namespace Doctrina.Math.Applied.Probability
 
 // A figure of merit is a quantity used to characterize the performance
 open MassTransit
+open Doctrina.Collections
 open Doctrina.Collections.NonEmpty
 
 type Merit<'a when 'a : comparison> = Merit of 'a
@@ -10,33 +11,33 @@ type Probability = float
 
 type Expectation<'e> = Expectation of 'e
 
-type Event< ^a  when ^a : (static member Zero : 'a) > = Event of 'a * Probability
-    with
-        static member inline Zero = Event(LanguagePrimitives.GenericZero< 'a >, 0.0)
+type Event<'a> = Event of 'a * Probability
+    // with
+    //     static member inline Zero = Event(LanguagePrimitives.GenericZero, 0.0)
 
-type Distribution< ^a when ^a : (static member Zero : 'a)> = Distribution of NonEmpty<Event<'a>>
+type Distribution<'a> = Distribution of NonEmpty<Event<'a>>
 
-type Transition< ^a when ^a : (static member Zero : 'a)> = 'a -> Distribution<'a>
+type Transition<'a> = 'a -> Distribution<'a>
 
-type Spread< ^a when ^a : (static member Zero : 'a)> = 'a list -> Distribution<'a>
+type Spread<'a> = 'a list -> Distribution<'a>
 
 // a sample space which is the set of all possible outcomes. I
 type Samples<'a> = Samples of 'a list
 
-type Experiment< ^a when ^a : (static member Zero : 'a)> = 'a list -> Distribution<'a>
+type Experiment<'a> = 'a list -> Distribution<'a>
 
 // is a function that maps an event or values of one or more variables 
 // onto a real number intuitively representing some benefit gained associated with the event.
-type Benefit< ^a, 'TMerit when ^a : (static member Zero : 'a) and 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
+type Benefit<'a, 'TMerit when 'TMerit: comparison> = Event<'a> -> Merit<'TMerit>
 
 type Sample< ^a when ^a: comparison > = 
     Sample of Set<'a>
 
 module Event =
-    let inline combine< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (f: 'a -> 'a -> 'b) (Event (x, p)) (Event (y, q)) : Event<'b> =
+    let inline combine< ^a, ^b> (f: 'a -> 'a -> 'b) (Event (x, p)) (Event (y, q)) : Event<'b> =
         Event (f x y, p * q)
 
-    let inline bind< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (Event (x, p)) (f: 'a -> Event<'b>) : Event<'b> =
+    let inline bind< ^a, ^b > (Event (x, p)) (f: 'a -> Event<'b>) : Event<'b> =
         let y = f x
         let (Event( y', q)) = y
         Event (y', q * p)
@@ -63,7 +64,7 @@ module Computation =
     
 
     // https://queue.acm.org/detail.cfm?id=3055303
-    let inline bind< ^a, ^b when ^a : (static member Zero : 'a) and ^b : (static member Zero : 'b)> (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
+    let inline bind< ^a, ^b> (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
         
         let x = nonEmpty {
             let (Distribution prior') =  prior
@@ -124,9 +125,9 @@ module Sampling =
 
     let Guid = Randomized (NewId.Next())
 
-    let rec inline scan (probability: Probability) (Distribution distribution) =
+    let rec scan (probability: Probability) (Distribution distribution) =
         match distribution with 
-        | (Singleton (Event (x, _))) -> x 
+        | Singleton (Event (x, _)) -> x 
         | List (Event (x, probability'), y::ys) -> 
                 match (probability <= probability') || y::ys = List.empty with
                 | true -> x

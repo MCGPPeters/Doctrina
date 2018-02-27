@@ -4,7 +4,6 @@ open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Collections.List
 open Doctrina.Math.Applied.Probability.Computation
-open Doctrina.Math.Applied.Probability.Distribution
 
 type Gamma = float
 type Epsilon = float
@@ -12,11 +11,7 @@ type Alpha = float
 
 type Reward = Reward of float 
 
-type Action<'a> = 
-    | Action of 'a
-    | Idle
-    with
-        static member inline Zero = Idle
+type Action<'a> = Action of 'a
 
 type State<'s> = State of 's
 
@@ -36,7 +31,7 @@ type Transition<'s, 'a> = {
     Action : Action<'a>
 }
 
-type Policy<'s, 'a> = Policy of (State<'s> -> Distribution<Action<'a>>)
+type Policy<'s, 'a> = Policy of (State<'s> -> Distribution<Action< ^a>>)
 
 //type Episode<'s, 'a> = Experiment<Policy<'s, 'a>>
 
@@ -48,13 +43,13 @@ type Observation<'a> = Observation of 'a
 
 
 type Environment<'s, 'a> = {
-    Dynamics: (State<'s> * Action<'a>) -> Randomized<(State<'s> * Reward * bool) option>
+    Dynamics: (State<'s> * Action<'a>) -> Randomized<(State<'s> * Reward * bool)>
     Discount: Gamma
 }
 
 module Agent =
         
-    let inline create< ^s, ^a  when ^a : (static member Zero : 'a) > (policy: Policy<'s, 'a>) decide : Agent<'s, 'a> =
+    let inline create< 's, 'a > (policy: Policy<'s, 'a>) decide : Agent<'s, 'a> =
         let (Policy policy) = policy
         policy >> decide
 
@@ -84,23 +79,21 @@ module Prediction =
 
             let currentReturn' = Utility ( Expectation( Return (current, currentReturn + learningRate * (reward + discount * (nextReturn - currentReturn)))))
 
-            Doctrina.Collections.List.update (Utility ( Expectation( Return (current, currentReturn)))) currentReturn' utilities 
+            update (Utility ( Expectation( Return (current, currentReturn)))) currentReturn' utilities 
 
-        let rec episode<'s, 'a when 's: equality> (environment: Environment<'s, 'a>) (agent: Agent<'s, 'a>) state utilities learningRate discount =
+        let rec episode environment (agent: Agent<'s, 'a>) state utilities learningRate discount =
 
             let action = agent state   
-            match environment.Dynamics (state, action) with
-            | Randomized(Some (next, reward, final)) ->
-                let utilities = update utilities state (next, reward) learningRate discount
-                match final with
-                | true -> utilities
-                | false -> episode environment agent next utilities learningRate discount 
-            | Randomized None -> utilities       
+            let (Randomized(next, reward, final)) = environment.Dynamics (state, action)
+            let utilities = update utilities state (next, reward) learningRate discount
+            match final with
+            | true -> utilities
+            | false -> episode environment agent next utilities learningRate discount       
 
     
 module Control =
 
-    let greedy distribution = distribution |> argMax
+    let inline greedy distribution = distribution |> argMax
 
     module Sarsa =
 
@@ -112,36 +105,9 @@ module Control =
                                                             |> List.collect (fun (Q ( Expectation( Return (_, nextReturn)))) ->
                                                                 let (Reward reward) = snd observation
                                                                 let currentReturn' = Q ( Expectation( Return (current, currentReturn + learningRate * (reward + discount * (nextReturn - currentReturn)))))
-                                                                Doctrina.Collections.List.update (Q ( Expectation( Return (current, currentReturn)))) currentReturn' actionValues))
+                                                                update (Q ( Expectation( Return (current, currentReturn)))) currentReturn' actionValues))
 
-        type Position = Position of int * int
 
-        type Move = 
-        | Left
-        | Right
-        | Up
-        | Down
-
-        let policy: Policy<Position, Move> = 
-            Policy(fun (State position) ->
-                        match position with
-                        | Position (0, 0) -> certainly (Action Up)
-                        | Position (0, 1) -> certainly (Action Up)
-                        | Position (0, 2) -> certainly (Action Right)
-                        | Position (1, 0) -> certainly (Action Left)
-                        | Position (1, 1) -> certainly (Action Up)
-                        | Position (1, 2) -> certainly (Action Right)
-                        | Position (2, 0) -> certainly (Action Left)
-                        | Position (2, 1) -> certainly (Action Up)
-                        | Position (2, 2) -> certainly (Action Right)
-                        | Position (3, 0) -> certainly (Action Left)
-                        | Position (3, 1) -> certainly (Action Idle)
-                        | Position (3, 2) -> certainly (Action Idle)
-                        | _ -> certainly Idle)
-
-        let agent = Agent.create policy (fun x -> 
-                                    let (Randomized action) = x |> pick
-                                    action)
 
         // let rec episode<'s, 'a when 's: equality and 'a: equality> (environment: Environment<'s, 'a>) (observation: ((State<'s> * Action<'a>) * Reward)) policy actionValues learningRate discount =
 
