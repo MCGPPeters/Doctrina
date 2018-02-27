@@ -1,6 +1,9 @@
 namespace Doctrina.Tests
 
 open Doctrina.Math.Applied.Learning.Reinforced
+open Doctrina.Math.Applied.Probability.Distribution
+open Doctrina.Collections
+open Doctrina.Math.Applied.Probability.Sampling
 
 module Environment =
 
@@ -22,3 +25,5 @@ module Environment =
 
 
         type Grid = Environment<Position, Move> 
+
+        

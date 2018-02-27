@@ -2,8 +2,9 @@ namespace Doctrina.Math.Applied.Learning.Reinforced
 
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
-open Doctrina.Collections.List
 open Doctrina.Math.Applied.Probability.Computation
+open Doctrina.Math.Applied.Probability.Distribution
+open Doctrina.Collections
 
 type Gamma = float
 type Epsilon = float
@@ -17,9 +18,9 @@ type State<'s> = State of 's
 
 type Return<'t> = Return of 't * float
 
-type Utility<'s> = Utility of Expectation<Return<State<'s>>>
+type V<'s> = V of 's
 
-type Q<'s, 'a> = Q of Expectation<Return<State<'s> * Action<'a>>>
+type Q<'s, 'a> = Q of 's * 'a
 
 type Origin<'s> = Origin of State<'s>
 
@@ -41,11 +42,21 @@ type Agent<'s, 'a> = State<'s> -> Action<'a>
 
 type Observation<'a> = Observation of 'a
 
-
 type Environment<'s, 'a> = {
     Dynamics: (State<'s> * Action<'a>) -> Randomized<(State<'s> * Reward * bool)>
     Discount: Gamma
 }
+
+module TD = 
+    let update (learningRate: Alpha) target (current: Return<'s>) =
+        let (Return (state, value)) = current
+        Expectation(Return (state, value + learningRate * (target - value)))
+
+    let target (reward: Reward) (discount: Gamma) nextValue = 
+        let (Return(state, value)) = nextValue
+        let (Reward r) = reward
+        let expected = r + (discount * value)
+        Expectation( Return (state, expected))
 
 module Agent =
         
@@ -62,75 +73,84 @@ module Prediction =
                 |> List.sum
         Return (state, r)                   
 
-    let rec find (utilities: Utility<'s> list) (state: State<'s>) =
-         match utilities with
-            | [] -> (Utility (Expectation (Return (state, 0.0))))
-            | (Utility (Expectation (Return (s, value ))))::_ when s = state -> (Utility (Expectation (Return (state, value ))))
-            | _::xs -> find xs state
+    let rec find utilities (state: State<'s>) =
+        match utilities with
+        | [] -> (state, 0.0)
+        | (s, value)::_ when s = state -> (state, value)
+        | _::xs -> find xs state
 
     module TD0 =  
 
-        let update<'s when 's : equality> utilities current (observation: (State<'s> * Reward)) (learningRate: Alpha) (discount: Gamma) =
-            
-            let (Utility ( Expectation( Return (_, currentReturn)))) = find utilities current
-            let (Utility ( Expectation( Return (_, nextReturn)))) = find utilities (fst observation)
-
-            let (Reward reward) = (snd observation)
-
-            let currentReturn' = Utility ( Expectation( Return (current, currentReturn + learningRate * (reward + discount * (nextReturn - currentReturn)))))
-
-            update (Utility ( Expectation( Return (current, currentReturn)))) currentReturn' utilities 
-
-        let rec episode environment (agent: Agent<'s, 'a>) state utilities learningRate discount =
+        let rec step environment (agent: Agent<'s, 'a>) state utilities learningRate discount =
 
             let action = agent state   
             let (Randomized(next, reward, final)) = environment.Dynamics (state, action)
-            let utilities = update utilities state (next, reward) learningRate discount
+            let (Expectation nextReturn) = utilities |> List.find (fun (Expectation (Return (s, _))) -> s = next)
+            let (Expectation currentReturn) = utilities |> List.find (fun (Expectation (Return (s, _))) -> s = state)
+            let (Expectation(Return(_, target))) = TD.target reward discount nextReturn
+            let utilities' = utilities 
+                             |> List.map (fun (Expectation (Return (s, value))) -> match s = state with 
+                                                                                   | true -> (TD.update learningRate target currentReturn)  
+                                                                                   | false -> (Expectation (Return(s, value))))
             match final with
-            | true -> utilities
-            | false -> episode environment agent next utilities learningRate discount       
+            | true -> utilities'
+            | false -> step environment agent next utilities' learningRate discount     
 
     
 module Control =
 
-    let inline greedy distribution = distribution |> argMax
+    let inline greedy distribution = 
+        let (Event (x, _)) = (distribution |> argMax)
+        x
+
+    let inline eGreedy epsilon distribution = 
+        let uniform = uniform (List(0.0,[0.1..1.0]))
+        let (Randomized sigma) = uniform |> pick
+        match sigma > epsilon with
+        | true -> let (Event (x, _)) = (distribution |> argMax)
+                  x
+        | false -> let (Randomized x) = distribution |> pick
+                   x    
+
+    let createPolicy initialPolicy = 
+        Policy(fun (State position) -> 
+            let map = Map.ofList initialPolicy
+            map.[position])    
 
     module Sarsa =
 
-        let update<'s, 'a when 's : equality and 'a : equality> (actionValues: Q<'s, 'a> list) (current: State<'s> * Action<'a>) (observation: ((State<'s> * Action<'a>) * Reward)) (learningRate: Alpha) (discount: Gamma) =
+        let rec step<'s, 'a when 's: equality and 's : comparison and 'a: equality> (environment: Environment<'s, 'a>) (observation: ((State<'s> * Action<'a>) * Reward)) policyMatrix decide qValues learningRate discount =
 
-            actionValues |> findFirst  (fun (Q(Expectation(Return(x, _)))) -> x = current) 
-                                    |> List.collect (fun (Q ( Expectation( Return (_, currentReturn)))) -> 
-                                                        findFirst (fun (Q(Expectation(Return(x, _)))) -> x = fst observation) actionValues
-                                                            |> List.collect (fun (Q ( Expectation( Return (_, nextReturn)))) ->
-                                                                let (Reward reward) = snd observation
-                                                                let currentReturn' = Q ( Expectation( Return (current, currentReturn + learningRate * (reward + discount * (nextReturn - currentReturn)))))
-                                                                update (Q ( Expectation( Return (current, currentReturn)))) currentReturn' actionValues))
+            let ((state, _), _) = observation
+            let action = policyMatrix |> List.find (fun (s, _) -> s = state) |> snd      
 
+            let (Randomized (next, reward, terminal)) = environment.Dynamics (state, action)
 
+            let observation' = ((next, action), reward)
+            let nextAction = policyMatrix |> List.find (fun (s, _) -> s = next) |> snd 
 
-        // let rec episode<'s, 'a when 's: equality and 'a: equality> (environment: Environment<'s, 'a>) (observation: ((State<'s> * Action<'a>) * Reward)) policy actionValues learningRate discount =
+            let (Expectation(q)) = qValues 
+                                   |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (state, action)) 
+            let (Expectation(qt1)) = qValues 
+                                     |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (next, nextAction)) 
 
-        //     let agent = policy |> Agent.create 
+            let (Expectation(Return(_, target))) = TD.target reward discount qt1
+            let newQValue = TD.update learningRate target q                                  
+            let qValues' = qValues 
+                           |> List.map (fun (Expectation(Return((s, a), value))) -> match (s, a) = (state, action) with 
+                                                                                    | true -> newQValue  
+                                                                                    | false -> Expectation(Return ((s,a), value)))
+            let (Expectation(Return((_, bestAction), _))) = qValues' 
+                                                            |> List.filter (fun (Expectation(Return((s, _), _))) -> s = state) 
+                                                            |> List.maxBy (fun (Expectation(Return ((_,_), value))) -> value)  
 
-        //     let action = agent (fst(fst observation))   
-        //     match action with
-        //     | Some (Randomized (Action action)) -> 
-        //         match environment.Dynamics (state, Action action) with
-        //         | Some (Randomized (next, reward, final)) ->
-        //             let utilities = update actionValues state ((nextState, action), reward) learningRate discount
-        //             match final with
-        //             | true -> utilities
-        //             | false -> episode environment agent next utilities learningRate discount 
-        //         | None -> actionValues
-        //     | None -> actionValues
-                                                            
-
+            let policyMatrix' = policyMatrix |> List.map (fun (s, a) -> match state = s with
+                                                                        | true -> (s, bestAction)
+                                                                        | false -> (s, a))                                                                            
             
-                        
-            
-
-                                              
+            match terminal with
+            | true -> policyMatrix', qValues'
+            | false -> step environment observation' policyMatrix' decide qValues' learningRate discount 
 
 module Objective = 
 

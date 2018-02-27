@@ -1,22 +1,11 @@
 #r @"C:\Users\maurice\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
-#load @"..\Doctrina\Doctrina.Math.Pure.Algebra.Structure.fs"
-#load @"..\Doctrina\Collections.fs"
 #load @"..\Doctrina\Doctrina.Collections.NonEmpty.fs"
 #load @"..\Doctrina\Doctrina.fs"
-#load @"..\Doctrina\Doctrina.Math.Pure.Structure.Order.fs"
-#load @"..\Doctrina\Doctrina.Math.Pure.Numbers.fs"
-#load @"..\Doctrina\Doctrina.Math.Pure.Change.Calculus.fs"
-#load @"..\Doctrina\Hyperparameter.fs"
 
 #load @"..\Doctrina\Doctrina.Math.Applied.Probability.fs"
-// #load @"d:\dev\Doctrina\src\Doctrina\Doctrina.Math.Pure.Algebra.Linear.fs"
-#load @"..\Doctrina\Doctrina.Math.Applied.Optimization.fs"
+
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.fs"
-#load @"..\Doctrina\Doctrina.Math.Applied.Learning.Evolutionary.fs"
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.Reinforced.fs"
-#load @"..\Doctrina\Caching.fs"
-#load @"..\Doctrina\Doctrina.Math.Applied.Learning.Neural.fs"
-#load @"..\Doctrina\Doctrina.Math.Applied.Learning.Evolutionary.Neural.fs"
 #load "Environments.fs"
 
 open Doctrina.Tests.Environment.Grid
@@ -28,12 +17,11 @@ open Doctrina.Math.Applied.Probability.Distribution
 open Doctrina.Math.Applied.Probability.Computation
 open Doctrina.Math.Applied.Probability
 open Doctrina.Collections
-open Doctrina.Collections.List
 open Doctrina.Math.Applied.Probability.Sampling
-let rec evolve (grid: Grid) (agent: Agent<Position, Move>) epochs (learningRate: Alpha) (discount: Gamma) (utilities: Utility<Position> list) =
+let rec evolve (grid: Grid) (agent: Agent<Position, Move>) epochs (learningRate: Alpha) (discount: Gamma) utilities =
     let state = State (Position (0, 0))  
 
-    let utilities = episode grid agent state utilities learningRate discount
+    let utilities = step grid agent state utilities learningRate discount
 
     match epochs = 1 with
     | true -> utilities
@@ -104,22 +92,22 @@ let agent = Agent.create policy (fun x ->
                                     action) 
 let alpha = 0.1
 let epochs = 5000
-let gamma = 0.999
+let gamma = 0.9
 let state = State(Position (0, 0))
 let utilities = [
-        Utility (Expectation ( Return (State (Position (0, 0)), 0.0)));
-        Utility (Expectation ( Return (State (Position (0, 1)), 0.0)));
-        Utility (Expectation ( Return (State (Position (0, 2)), 0.0)));
-        Utility (Expectation ( Return (State (Position (1, 0)), 0.0)));
-        Utility (Expectation ( Return (State (Position (1, 1)), 0.0)));
-        Utility (Expectation ( Return (State (Position (1, 2)), 0.0)));
-        Utility (Expectation ( Return (State (Position (2, 0)), 0.0)));
-        Utility (Expectation ( Return (State (Position (2, 1)), 0.0)));
-        Utility (Expectation ( Return (State (Position (2, 2)), 0.0)));
-        Utility (Expectation ( Return (State (Position (3, 0)), 0.0)));
-        Utility (Expectation ( Return (State (Position (3, 1)), 0.0)));
-        Utility (Expectation ( Return (State (Position (3, 2)), 0.0)));
+        Expectation ( Return (State (Position (0, 0)), 0.0));
+        Expectation ( Return (State (Position (0, 1)), 0.0));
+        Expectation ( Return (State (Position (0, 2)), 0.0));
+        Expectation ( Return (State (Position (1, 0)), 0.0));
+        Expectation ( Return (State (Position (1, 1)), 0.0));
+        Expectation ( Return (State (Position (1, 2)), 0.0));
+        Expectation ( Return (State (Position (2, 0)), 0.0));
+        Expectation ( Return (State (Position (2, 1)), 0.0));
+        Expectation ( Return (State (Position (2, 2)), 0.0));
+        Expectation ( Return (State (Position (3, 0)), 0.0));
+        Expectation ( Return (State (Position (3, 1)), 0.0));
+        Expectation ( Return (State (Position (3, 2)), 0.0));
         ]
 
-evolve grid agent 100000 alpha gamma utilities 
+evolve grid agent 200 alpha gamma utilities 
                                                                                             
