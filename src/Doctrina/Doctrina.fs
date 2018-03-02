@@ -2,6 +2,8 @@ namespace Doctrina
 
 type Undefined = exn
 
+type Ordering = LT | EQ | GT
+
 module Maybe =
 
     type MaybeBuilder() =

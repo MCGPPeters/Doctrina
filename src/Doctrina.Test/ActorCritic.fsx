@@ -3,7 +3,7 @@
 #load @"..\Doctrina\Doctrina.fs"
 
 #load @"..\Doctrina\Doctrina.Math.Applied.Probability.fs"
-#load @"..\Doctrina\Doctrina.Math.Pure.Algebra.Structure.fs"
+
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.fs"
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.Reinforced.fs"
 #load "Environments.fs"

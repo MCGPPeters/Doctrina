@@ -18,9 +18,30 @@ type State<'s> = State of 's
 
 type Return<'t> = Return of 't * float
 
-type V<'s> = V of 's
+// The state value function or utility function
+type U<'s> = U of (State<'s> -> Expectation<Return<State<'s>>>)
 
-type Q<'s, 'a> = Q of 's * 'a
+type Utilities<'s> = Utilities of Expectation<Return<State<'s>>> list
+
+module U =
+
+    let ofUtilities (Utilities utilities) : U<'s> = 
+        U(fun v ->
+            utilities |> List.find (fun (Expectation(Return(s,_))) -> s = v))
+            
+
+type Q<'s, 'a> = Q of (State<'s> -> (Expectation<Return<Action<'a>>> list))
+
+type StateActionValues<'s, 'a> = StateActionValues of (State<'s> * (Expectation<Return<Action<'a>>> list))
+
+module Q = 
+
+    let ofStateActionValues (stateActionMatrix: StateActionValues<'s, 'a> list) : Q<'s, 'a> =
+        Q(fun state ->
+            stateActionMatrix 
+                |> List.filter (fun (StateActionValues(s, _)) -> s = state) 
+                |> List.collect (fun (StateActionValues(_, values)) -> values))
+
 
 type Origin<'s> = Origin of State<'s>
 
@@ -32,7 +53,19 @@ type Transition<'s, 'a> = {
     Action : Action<'a>
 }
 
+type StateActionMatrix<'s, 'a> = (State<'s> * Action<'a>) list
+
 type Policy<'s, 'a> = Policy of (State<'s> -> Distribution<Action< ^a>>)
+
+module Policy =
+    let ofStateActionMatrix (stateActionMatrix : StateActionMatrix<'s, 'a>)  : Policy<'s, 'a> = 
+        Policy(fun (State state) -> 
+            let map = Map.ofList stateActionMatrix
+            certainly map.[State state])
+
+    let ofQ (q: Q<'s, 'a>) (normalize: Expectation<Return<Action<'a>>> list -> Distribution<Action<'a>>)  : Policy<'s, 'a> =
+        let (Q qFunction) = q
+        Policy(fun state -> state |> (qFunction >> normalize))
 
 //type Episode<'s, 'a> = Experiment<Policy<'s, 'a>>
 
@@ -48,12 +81,12 @@ type Environment<'s, 'a> = {
 }
 
 module TD = 
-    let update (learningRate: Alpha) target (current: Return<'s>) =
+    let update (learningRate: Alpha) target (current: Return<'a>) =
         let (Return (state, value)) = current
         Expectation(Return (state, value + learningRate * (target - value)))
 
-    let target (reward: Reward) (discount: Gamma) nextValue = 
-        let (Return(state, value)) = nextValue
+    let target (reward: Reward) (discount: Gamma) (next: Return<'a>) = 
+        let (Return(state, value)) = next
         let (Reward r) = reward
         let expected = r + (discount * value)
         Expectation( Return (state, expected))
@@ -112,9 +145,9 @@ module Control =
         | false -> let (Randomized x) = distribution |> pick
                    x    
 
-    let createPolicy initialPolicy = 
+    let createPolicy policyMatrix = 
         Policy(fun (State position) -> 
-            let map = Map.ofList initialPolicy
+            let map = Map.ofList policyMatrix
             map.[position])    
 
     module Sarsa =
