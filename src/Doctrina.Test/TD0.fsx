@@ -1,4 +1,4 @@
-#r @"C:\Users\maurice\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
+#r @"C:\Users\maurice.peters\.nuget\packages\newid\3.0.1\lib\netstandard1.6\NewId.dll"
 #load @"..\Doctrina\Doctrina.Collections.NonEmpty.fs"
 #load @"..\Doctrina\Doctrina.fs"
 
@@ -7,6 +7,8 @@
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.fs"
 #load @"..\Doctrina\Doctrina.Math.Applied.Learning.Reinforced.fs"
 #load "Environments.fs"
+#I @"C:\Users\maurice.peters\.nuget\packages\FSharp.Charting"
+#load @"C:\Users\maurice.peters\.nuget\packages\fsharp.charting\0.91.1\lib\net45\FSharp.Charting.fsx"
 
 open Doctrina.Tests.Environment.Grid
 open Doctrina.Math.Applied.Learning.Reinforced
@@ -109,5 +111,9 @@ let utilities = [
         Expectation ( Return (State (Position (3, 2)), 0.0));
         ]
 
-evolve grid agent 200 alpha gamma utilities 
-                                                                                            
+let result = evolve grid agent 200000 alpha gamma utilities |> List.map (fun (Expectation(Return(State(Position(x, y)), value))) -> (x, y, value))
+
+open FSharp.Charting
+
+Chart.Point([for (x, y, value) in result -> (x, y) ], null, null, [for (_, _, value) in result -> string value])
+
