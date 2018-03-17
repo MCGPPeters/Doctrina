@@ -34,10 +34,10 @@ type Sample< ^a when ^a: comparison > =
     Sample of Set<'a>
 
 module Event =
-    let inline combine< ^a, ^b> (f: 'a -> 'a -> 'b) (Event (x, p)) (Event (y, q)) : Event<'b> =
+    let inline combine(f: 'a -> 'a -> 'b) (Event (x, p)) (Event (y, q)) : Event<'b> =
         Event (f x y, p * q)
 
-    let inline bind< ^a, ^b > (Event (x, p)) (f: 'a -> Event<'b>) : Event<'b> =
+    let inline bind(Event (x, p)) (f: 'a -> Event<'b>) : Event<'b> =
         let y = f x
         let (Event( y', q)) = y
         Event (y', q * p)
@@ -54,17 +54,14 @@ module Computation =
 
     open Distribution
 
-    let inline return' a : Distribution<'a> =   
-        certainly a
 
     let inline combine f (Distribution d) (Distribution d') : Distribution<'b> =
         Distribution (NonEmpty.combine (Event.combine f) d d')                             
 
     let pair x y = (x, y) 
     
-
     // https://queue.acm.org/detail.cfm?id=3055303
-    let inline bind< ^a, ^b> (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
+    let inline bind (prior: Distribution<'a>) (likelihood: 'a -> Distribution<'b>) : Distribution<'b> =
         
         let x = nonEmpty {
             let (Distribution prior') =  prior
@@ -77,26 +74,16 @@ module Computation =
         Distribution x                  
 
     ///mapD :: (a -> b) -> Dist a -> Dist b
-    let inline map (f: 'a -> 'b) (Distribution distribution) : Distribution<'b> = 
+    let inline map(f: 'a -> 'b) (distribution: Distribution<'a>) : Distribution<'b> = 
     
         let events = nonEmpty {
-            for Event (x, p) in distribution do
+            let (Distribution distribution') =  distribution
+            for Event (x, p) in distribution' do
             for y in Singleton (f x) do 
             return Event (y, p)
         }
 
-        Distribution events   
-
-    // let inline apply (Distribution fDistribution) (Distribution distribution) : Distribution<'b> = 
-    //     let events = nonEmpty {
-    //         for Event (x, p) in distribution do
-    //         for Event (f, _) in fDistribution do
-    //         for y in Singleton (f x) do 
-    //         return Event (y, p)
-    //     }
-
-    //     Distribution events
-                  
+        Distribution events                    
 
     let inline filter (Distribution distribution) predicate : Distribution<'a> =
        distribution |> NonEmpty.filter predicate |> Distribution
@@ -110,14 +97,24 @@ module Computation =
     let inline argMax (Distribution distribution) =
         distribution |> NonEmpty.maxBy (fun (Event(x,_)) -> x)
 
-    let inline (>>=) a b = bind a b
-
     type DistributionMonadBuilder() =
-        member inline __.Bind (r, f) = bind r f
-        member inline __.Return x = return' x
+        member inline __.Bind (m, f) = bind m f
+        member inline __.Return x = certainly x
+
+        member inline __.Map (f, m) = map f m
         member __.ReturnFrom m = m
 
     let probabilistic = DistributionMonadBuilder()
+
+    open Doctrina.Math.Pure.Structure.Algebra.Structures.Monad
+
+    let inline (>>=) m f = Bind probabilistic m f 
+
+    let inline return' x = Return probabilistic x
+
+    open Doctrina.Math.Pure.Structure.Algebra.Structures.Functor
+
+    let inline (<!>) f m = mapF probabilistic f m
 
 module Sampling = 
 

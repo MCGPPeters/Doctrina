@@ -51,22 +51,10 @@ let grid: Grid = {
                                     | Randomized (Action Down) -> 
                                         Position (x, y - 1)
                                     | Randomized (Action Idle) -> position 
-                        match next with 
-                        | Position (0, 0) -> certainly (State next, Reward -0.04, false)
-                        | Position (0, 1) -> certainly (State next, Reward -0.04, false)
-                        | Position (0, 2) -> certainly (State next, Reward -0.04, false)
-                        | Position (1, 0) -> certainly (State next, Reward -0.04, false)
-                        | Position (1, 1) -> certainly (State position, Reward -0.04, false)                                                                                       
-                        | Position (1, 2) -> certainly (State next, Reward -0.04, false)
-                        | Position (2, 0) -> certainly (State next, Reward -0.04, false)
-                        | Position (2, 1) -> certainly (State next, Reward -0.04, false)
-                        | Position (2, 2) -> certainly (State next, Reward -0.04, false)
-                        | Position (3, 0) -> certainly (State next, Reward -0.04, false)
+                        match next with                                                                                      
                         | Position (3, 1) -> certainly (State next, Reward -1.0, true)                                                                                           
                         | Position (3, 2) -> certainly (State next, Reward 1.0, true)                                                                                           
-                        | _ -> 
-                            //printfn "%A" next
-                            certainly (State position, Reward -0.04, false)
+                        | _ -> certainly (State position, Reward -0.04, false)
                         |> pick                                                                                                        
                         
     Discount = 0.999
