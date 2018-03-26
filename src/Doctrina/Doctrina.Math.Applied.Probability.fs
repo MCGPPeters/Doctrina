@@ -15,6 +15,7 @@ type Event<'a> = Event of 'a * Probability
     // with
     //     static member inline Zero = Event(LanguagePrimitives.GenericZero, 0.0)
 
+
 type Distribution<'a> = Distribution of NonEmpty<Event<'a>>
 
 type Transition<'a> = 'a -> Distribution<'a>
@@ -48,12 +49,7 @@ module Distribution =
 
     let inline uniform list =
         let length = NonEmpty.length list 
-        list |> NonEmpty.map (fun e -> Event (e , (1.0 / float length))) |> Distribution
-
-module Computation = 
-
-    open Distribution
-
+        list |> NonEmpty.map (fun e -> Event (e , (1.0 / float length))) |> Distribution                  
 
     let inline combine f (Distribution d) (Distribution d') : Distribution<'b> =
         Distribution (NonEmpty.combine (Event.combine f) d d')                             
@@ -106,13 +102,13 @@ module Computation =
 
     let probabilistic = DistributionMonadBuilder()
 
-    open Doctrina.Math.Pure.Structure.Algebra.Structures.Monad
+    open Doctrina.Math.Pure.Algebra.Structures.Categorical
 
-    let inline (>>=) m f = Bind probabilistic m f 
+    let inline (>>=) m f = Monad.Bind probabilistic m f 
 
-    let inline return' x = Return probabilistic x
+    let inline return' x = Monad.Return probabilistic x
 
-    open Doctrina.Math.Pure.Structure.Algebra.Structures.Functor
+    open Doctrina.Math.Pure.Algebra.Structures.Categorical.Functor
 
     let inline (<!>) f m = mapF probabilistic f m
 

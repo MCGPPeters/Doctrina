@@ -1,9 +1,8 @@
 namespace Doctrina.Math.Applied.Learning.Reinforced
 
 open Doctrina.Math.Applied.Probability
-open Doctrina.Math.Applied.Probability.Sampling
-open Doctrina.Math.Applied.Probability.Computation
 open Doctrina.Math.Applied.Probability.Distribution
+open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Collections
 
 type Gamma = float
@@ -162,9 +161,9 @@ module Control =
             let observation' = ((next, action), reward)
             let nextAction = policyMatrix |> List.find (fun (s, _) -> s = next) |> snd 
 
-            let (Expectation(q)) = qValues 
+            let (Expectation q) = qValues 
                                    |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (state, action)) 
-            let (Expectation(qt1)) = qValues 
+            let (Expectation qt1) = qValues 
                                      |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (next, nextAction)) 
 
             let (Expectation(Return(_, target))) = TD.target reward discount qt1
