@@ -17,8 +17,8 @@ open Doctrina.Math.Applied.Learning.Reinforced.Control.Sarsa
 open Doctrina.Math.Applied.Probability
 open Doctrina.Math.Applied.Probability.Sampling
 open Doctrina.Math.Applied.Probability.Distribution
-open Doctrina.Math.Applied.Probability.Computation
 open Doctrina.Math.Applied.Probability
+open Doctrina.Collections.NonEmpty
 open Doctrina.Collections
 open Doctrina.Math.Applied.Probability.Sampling
 let rec evolve (grid: Grid) observation epochs policy decide (learningRate: Alpha) (discount: Gamma) qValues =
@@ -166,8 +166,6 @@ let QValues = [
         (Expectation(Return((State(Position (3, 2)), Action Left), 0.0)));
         (Expectation(Return((State(Position (3, 2)), Action Right), 0.0)));
         (Expectation(Return((State(Position (3, 2)), Action Idle), 0.0)))]       
-
-//(Position (3, 2), actionDistribution |> pickAction |> certainly)
 
 let epsilon = 0.1;
 

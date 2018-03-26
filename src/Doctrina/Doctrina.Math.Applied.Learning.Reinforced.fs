@@ -78,6 +78,8 @@ type Observation<'a> = Observation of 'a
 type Environment<'s, 'a> = {
     Dynamics: (State<'s> * Action<'a>) -> Randomized<(State<'s> * Reward * bool)>
     Discount: Gamma
+    Actions: Action<'a> list
+    Observations: Observation<'a> list
 }
 
 module TD = 
@@ -184,6 +186,41 @@ module Control =
             match terminal with
             | true -> policyMatrix', qValues'
             | false -> step environment observation' policyMatrix' decide qValues' learningRate discount 
+
+    module ActorCritic =
+        let rec step<'s, 'a when 's: equality and 's : comparison and 'a: equality> (environment: Environment<'s, 'a>) (observation: ((State<'s> * Action<'a>) * Reward)) policyMatrix decide qValues learningRate discount =
+
+            let ((state, _), _) = observation
+            let action = policyMatrix |> List.find (fun (s, _) -> s = state) |> snd      
+
+            let (Randomized (next, reward, terminal)) = environment.Dynamics (state, action)
+
+            let observation' = ((next, action), reward)
+            let nextAction = policyMatrix |> List.find (fun (s, _) -> s = next) |> snd 
+
+            let (Expectation(q)) = qValues 
+                                   |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (state, action)) 
+            let (Expectation(qt1)) = qValues 
+                                     |> List.find (fun (Expectation(Return((s, a), _))) -> (s, a) = (next, nextAction)) 
+
+            let (Expectation(Return(_, target))) = TD.target reward discount qt1
+            let newQValue = TD.update learningRate target q                                  
+            let qValues' = qValues 
+                           |> List.map (fun (Expectation(Return((s, a), value))) -> match (s, a) = (state, action) with 
+                                                                                    | true -> newQValue  
+                                                                                    | false -> Expectation(Return ((s,a), value)))
+            let (Expectation(Return((_, bestAction), _))) = qValues' 
+                                                            |> List.filter (fun (Expectation(Return((s, _), _))) -> s = state) 
+                                                            |> List.maxBy (fun (Expectation(Return ((_,_), value))) -> value)  
+
+            let policyMatrix' = policyMatrix |> List.map (fun (s, a) -> match state = s with
+                                                                        | true -> (s, bestAction)
+                                                                        | false -> (s, a))                                                                            
+            
+            match terminal with
+            | true -> policyMatrix', qValues'
+            | false -> step environment observation' policyMatrix' decide qValues' learningRate discount   
+
 
 module Objective = 
 

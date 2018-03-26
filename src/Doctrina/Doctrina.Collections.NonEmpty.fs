@@ -1,8 +1,8 @@
 namespace Doctrina.Collections
 
 type NonEmpty<'a> = 
-        | Singleton of 'a
-        | List of Head : 'a * Tail : 'a list            
+| Singleton of 'a
+| List of Head : 'a * Tail : 'a list
 
 module NonEmpty =
 
